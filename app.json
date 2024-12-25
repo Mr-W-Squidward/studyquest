@@ -11,6 +11,10 @@
     "ios": {
       "supportsTablet": true
     },
+    "assets": [
+      "./assets/fonts/Baskervville-Regular.ttf",
+      "./assets/fonts/AnnieUseYourTelescope-Regular.ttf"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -32,7 +36,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
