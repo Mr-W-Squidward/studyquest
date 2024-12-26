@@ -1,8 +1,12 @@
 import React from 'react';
-import { Text, View, StyleSheet, SafeAreaView, StatusBar, Platform, Dimensions } from "react-native";
-import WelcomeScreen from './screens/WelcomeScreen';
+import { NavigationContainer } from '@react-navigation/native';
+import { AuthProvider } from './context/AuthContext'; 
+import AuthScreen from './navigation/AuthScreen'; 
 
-export default function Index() {
-  return <WelcomeScreen />;
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthScreen />
+    </AuthProvider>
+  );
 }
-
