@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ImageBackground, StyleSheet, View, Image, Text, TextInput, TouchableOpacity, Alert, Touchable, KeyboardAvoidingView, ScrollView, Platform, Modal } from 'react-native';
 import { auth } from '../firebaseconfig'; 
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 
 
 
@@ -10,6 +11,16 @@ export default function AuthScreen() {
   const [showForm, setShowForm] = useState(false); // show n hide email/pass input
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigation.navigate('Home')
+      }
+    });
+    return unsubscribe;
+  }, [])
 
 
   const handleLoginPress = () => {
@@ -50,6 +61,7 @@ export default function AuthScreen() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         Alert.alert('Success', 'Signed In Successfully!');
+        navigation.navigate('Home');
       }
       setShowForm(false);
     } catch (error: any) {
