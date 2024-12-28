@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ImageBackground, StyleSheet, View, Image, Text, TextInput, TouchableOpacity, Alert, Touchable, KeyboardAvoidingView, ScrollView, Platform, Modal } from 'react-native';
+import { ImageBackground, StyleSheet, View, Image, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, ScrollView, Platform, Modal } from 'react-native';
 import { auth } from '../firebaseconfig'; 
 import { useNavigation } from '@react-navigation/native';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
@@ -36,7 +36,6 @@ export default function AuthScreen() {
   }
 
   const handleAuthAction = async () => {
-    const allowedDomains = ['gmail.com', 'outlook.com', 'yahoo.ca']
 
     if (!email || !password) {
       Alert.alert('Error', 'Please fill out all fields.');
@@ -82,7 +81,7 @@ export default function AuthScreen() {
         source={require('../../assets/images/landinggradient.png')}
         >
           <View style={styles.logoContainer}>
-            <Image style={styles.logo} source={require('../../assets/images/SQLogo.png')}/>
+            <Image style={styles.logo} source={require('../../assets/images/favicon.png')}/>
             <Text style={styles.logoText}>STUDYQUEST</Text>
             <View style={styles.slogans}>
               <Text style={styles.sloganText}>• Turn studying into an adventure</Text>
