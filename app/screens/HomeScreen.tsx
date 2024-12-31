@@ -1,23 +1,106 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState, useRef } from 'react';
-import { auth } from '../firebaseconfig';
+import React, { useState, useRef, useEffect } from 'react';
+import { auth } from '../../firebase/firebaseconfig';
 import { signOut } from 'firebase/auth';
-import { ImageBackground, StyleSheet, View, Image, Text, TouchableOpacity, Alert, Animated, Easing, ScrollView } from 'react-native';
+import { 
+  ImageBackground, 
+  StyleSheet, 
+  View, 
+  Image, 
+  Text, 
+  TouchableOpacity, 
+  Alert, 
+  Animated, 
+  Easing, 
+  ScrollView } 
+from 'react-native';
+import {  
+  addPlayer,
+  updatePlayerXP,
+  fetchLeaderboard,
+  subscribeToLeaderboard,
+  Player,
+} from '../../firebase/firebaseService';
+import { arrayUnion, doc, getDoc, increment, updateDoc } from 'firebase/firestore';
+import { db } from '../../firebase/firebaseconfig';
 
 export default function HomeScreen() {
   const [isStudying, setIsStudying] = useState(false);
-  const [timer, setTimer] = useState(null);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
   const [minutesStudied, setMinutesStudied] = useState(0);
   const [xp, setXP] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(0);
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<Player[]>([]);
+  const [playerRank, setPlayerRank] = useState<number>(1);
+  const [competitor, setCompetitor] = useState<string | null>(null);
+  const [beatingCompetitorBy, setBeatingCompetitorBy] = useState<number | null | string>(null);
+  const [xpUntilNextRank, setXpUntilNextRank] = useState<number | null | string>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [studySessions, setStudySessions] = useState(0);
+
   const animatedValue = useRef(new Animated.Value(0)).current;
-  const xpReq = [10, 15, 23, 31, 50, 79, 102, 130, 150]; // XP thresholds for levels]
+  const rankAnimation = useRef(new Animated.Value(1)).current;
   const navigation = useNavigation();
+
+  useEffect(() => {
+  const initializePlayer = async () => {
+    await addPlayer();
+    
+    const user = auth.currentUser;
+    if (user) {
+      const playerDoc = await getDoc(doc(db, 'leaderboard', user.uid));
+      if (playerDoc.exists()) {
+        const data = playerDoc.data();
+        setXP(data.xp || 0);
+        setMinutesStudied(data.minutesStudied || 0);
+        setCurrentLevel(data.currentLevel || 0);
+
+        const username = data.username || 'anonymous';
+        setUsername(username);
+      }
+    }
+  };
+  
+  initializePlayer();
+
+  const unsubscribe = subscribeToLeaderboard((updatedLeaderboard) => {
+    setLeaderboard(updatedLeaderboard);
+
+    const user = auth.currentUser;
+    if (user) {
+      const playerRankIndex = updatedLeaderboard.findIndex((player) => player.id === user.uid);
+
+      if (playerRankIndex !== -1) {
+        const newRank = playerRankIndex+1;
+        if (newRank !== playerRank) {
+          triggerRankUpAnimation();
+        }
+        setPlayerRank(newRank);
+
+        if (playerRankIndex < updatedLeaderboard.length - 1) {
+          const competitorPlayer = updatedLeaderboard[playerRankIndex + 1]; // player BEHIND on leaderboard (+1)
+          setCompetitor('-' + competitorPlayer.username + '-' || 'NO COMPETITOR');
+          const xpUntilRankUp = updatedLeaderboard[playerRankIndex-1].xp - updatedLeaderboard[playerRankIndex].xp
+          const xpDifference = updatedLeaderboard[playerRankIndex].xp - competitorPlayer.xp
+          const minutesDifference = xpDifference / 10; // assuming 10 xp = 1 min (will change prolly)
+          setBeatingCompetitorBy(minutesDifference);
+          setXpUntilNextRank(xpUntilRankUp);
+        } else {
+          setCompetitor('No Competitor...');
+          setBeatingCompetitorBy('-∞');
+          const xpUntilRankUp = updatedLeaderboard[playerRankIndex-1].xp - updatedLeaderboard[playerRankIndex].xp;
+          setXpUntilNextRank(xpUntilRankUp)
+        }
+      } 
+    }
+  });
+  return () => unsubscribe(); // clean up
+}, []);
 
   const startStudying = () => {
     if (!isStudying) {
-
       Animated.timing(animatedValue, {
         toValue: 1,
         duration: 500,
@@ -27,45 +110,75 @@ export default function HomeScreen() {
 
 
       setIsStudying(true);
+      setStartTime(Date.now());
+
       const interval: any = setInterval(() => {
-        setMinutesStudied((prevMinutes) => parseFloat((prevMinutes+0.1).toFixed(1)));
-        setXP((prevXP) => prevXP + 1) // 1 XP / min or 60 XP / min
+        setMinutesStudied((prev) => parseFloat((prev+0.1).toFixed(1)));
+        setXP((prevXP) => {
+          const newXP = prevXP + 1;
+          setXpUntilNextRank(xpUntilNextRank);
+          return newXP;
+        }); // 1 xp / min
       }, 6000) // 6000 ms = 0.1 sec
       setTimer(interval);
     }
   };
 
-  const stopStudying = () => {
+  const stopStudying = async () => {
     if (isStudying) {
       clearInterval(timer);
       setIsStudying(false);
-
+  
       Animated.timing(animatedValue, {
         toValue: 0,
         duration: 500,
         easing: Easing.out(Easing.exp),
         useNativeDriver: false,
       }).start();
-
+  
+      const user = auth.currentUser;
+      if (user) {
+        const sessionDuration = Date.now() - (startTime || Date.now()); 
+        const sessionMinutes: number = sessionDuration / 60000; // Convert to MINS from MS
+  
+        if (sessionMinutes > 0.1) { // Only save sessions longer than 0.1 minutes
+          try {
+            const playerDocRef = doc(db, 'leaderboard', user.uid);
+  
+            // Update Firestore with new minutesStudied, xp, and studySessions
+            await updateDoc(playerDocRef, {
+              minutesStudied: increment(sessionMinutes),
+              xp: increment((sessionMinutes.toFixed(1) * 10)), // 10 XP per minute
+              studySessions: arrayUnion(sessionDuration),
+            });
+  
+            console.log('Study session saved:', sessionMinutes);
+          } catch (error) {
+            console.error('Error updating study session:', error);
+          }
+        }
+      }
+  
       setTimer(null);
+      setStartTime(null);
     }
-  }
+  };
+  
 
-  const checkLevelUp = (newXP: any) => {
-    if (currentLevel < xpReq.length && newXP >= xpReq[currentLevel]) {
-      setCurrentLevel((prevLevel) => prevLevel+1); // LVL UP!
-    }
-  }
-
-  const layoutHeight = animatedValue.interpolate({
-    inputRange: [0,1],
-    outputRange: [180, 300] // adjust heights for initial/expanded layouts
-  });
-
-  const layoutOpacity = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0.9] // slight change in opacity
-  });
+  const triggerRankUpAnimation = () => {
+    Animated.sequence([
+      Animated.timing(rankAnimation, {
+        toValue: 1.5,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rankAnimation, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start()
+  };
 
   const handleLogout = async () => {
     try {
@@ -93,9 +206,9 @@ export default function HomeScreen() {
           styles.animatedContainer, 
         {
           transform: [
-            { translateY: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0, 50] }) },
+            { translateY: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
           ],
-          opacity: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [1, 0.8] }),
+          opacity: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }),
         },
       ]}
       >
@@ -104,7 +217,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.headerContainer}>
-            <Text style={styles.credit}>Made by Wajeeh Alam</Text>
+            <Text style={styles.credit}>Account: {username}</Text>
 
             <TouchableOpacity
               style={styles.menuButton}
@@ -146,7 +259,7 @@ export default function HomeScreen() {
 
             <View style={styles.infoRow}>
               <Image source={require('../../assets/images/presenticon.png')} style={styles.infoImages}/>
-              <Text style={styles.infoText}>NEXT LEVEL: {xpReq[currentLevel] || '--'} XP Required</Text>
+              <Text style={styles.infoText}>NEXT RANK: {xpUntilNextRank} XP Required</Text>
             </View>
             {/* START/STOP STUDYING */}
             <View style={styles.studyingContainer}>
@@ -165,7 +278,39 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </ImageBackground>
             </View>
-        </View>
+            
+            <View style={styles.rankSection}>
+              <Animated.Image 
+                source={require('../../assets/images/crownIcon.png')} 
+                style={[styles.rankImage, 
+                  {transform: [{scale: rankAnimation }] }, // scale animation
+                ]}
+              />
+              <Text style={styles.rank}>RANK #{playerRank}</Text>
+            </View>
+
+            <Text style={styles.competitor}>COMPETITOR: {competitor}</Text>
+
+            <Text style={styles.beatingCompetitorBy}>You are winning by {beatingCompetitorBy} minutes.</Text>
+          </View>
+          <View style={styles.navbarContainer}>
+            <TouchableOpacity 
+              style={[styles.navbarCategories, { backgroundColor: '#DF3131' },]} onPress={() => navigation.navigate('Home')}>
+              <Text style={styles.navbarText}>Home</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Profile')}>
+              <Text style={styles.navbarText}>Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Challenges')}>
+              <Text style={styles.navbarText}>Challenges</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Leaderboard')}>
+              <Text style={styles.navbarText}>Leaderboard</Text>
+            </TouchableOpacity>
+          </View>
       </ScrollView>
     </Animated.View>
   </ImageBackground>
@@ -173,11 +318,63 @@ export default function HomeScreen() {
 }
       
 const styles = StyleSheet.create({
+  navbarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    bottom: -140,
+  },
+  navbarCategories: {
+    padding: 10,
+    borderRadius: 10,
+  },
+  navbarText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  rankSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rank: {
+    fontSize: 20,
+    color: '#FFFFFF',
+    fontFamily: 'AnnieUseYourTelescope-Regular',
+    textShadowColor: '#000000',
+    textShadowRadius: 5,
+    textShadowOffset: { width: 4, height: 4},
+  },
+  rankImage: {
+    height: 40,
+    width: 40,
+  },
+  competitor: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: '#FFFFFF',
+    fontFamily: 'AnnieUseYourTelescope-Regular',
+    textShadowColor: '#000000',
+    textShadowRadius: 5,
+    textShadowOffset: { width: 4, height: 4},
+    marginVertical: 10,
+  },
+  beatingCompetitorBy: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: '#FFFFFF',
+    fontFamily: 'AnnieUseYourTelescope-Regular',
+    textShadowColor: '#000000',
+    textShadowRadius: 5,
+    textShadowOffset: { width: 4, height: 4},
+    marginVertical: 10,
+  },
   scrollContainer: {
-    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 35,
   },
   animatedContainer: {
     flex: 1,
@@ -189,6 +386,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   infoContainer: {
     marginVertical: 10,
@@ -236,7 +434,8 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   title: {
-    marginBottom: 28,
+    marginTop: 10,
+    marginBottom: 20,
     fontFamily: 'Baskervville-Regular',
     fontSize: 28,
     color: '#FFFFFF',
@@ -278,7 +477,7 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     position: 'absolute',
-    top: 40,
+    top: 90,
     right: 20, 
     backgroundColor: "#682860",
     borderRadius: 10,

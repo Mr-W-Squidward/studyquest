@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ImageBackground, StyleSheet, View, Image, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, ScrollView, Platform, Modal } from 'react-native';
-import { auth } from '../firebaseconfig'; 
+import { auth } from '../../firebase/firebaseconfig'; 
 import { useNavigation } from '@react-navigation/native';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 
