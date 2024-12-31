@@ -83,7 +83,7 @@ export default function HomeScreen() {
           const competitorPlayer = updatedLeaderboard[playerRankIndex + 1]; // player BEHIND on leaderboard (+1)
           setCompetitor('-' + competitorPlayer.username + '-' || 'NO COMPETITOR');
           const xpUntilRankUp = updatedLeaderboard[playerRankIndex-1].xp - updatedLeaderboard[playerRankIndex].xp
-          const xpDifference = updatedLeaderboard[playerRankIndex].xp - competitorPlayer.xp
+          const xpDifference = (updatedLeaderboard[playerRankIndex].xp - competitorPlayer.xp).toFixed(1)
           const minutesDifference = xpDifference / 10; // assuming 10 xp = 1 min (will change prolly)
           setBeatingCompetitorBy(minutesDifference);
           setXpUntilNextRank(xpUntilRankUp);
@@ -115,8 +115,7 @@ export default function HomeScreen() {
       const interval: any = setInterval(() => {
         setMinutesStudied((prev) => parseFloat((prev+0.1).toFixed(1)));
         setXP((prevXP) => {
-          const newXP = prevXP + 1;
-          setXpUntilNextRank(xpUntilNextRank);
+          const newXP = prevXP + 1;          
           return newXP;
         }); // 1 xp / min
       }, 6000) // 6000 ms = 0.1 sec
@@ -148,8 +147,8 @@ export default function HomeScreen() {
             // Update Firestore with new minutesStudied, xp, and studySessions
             await updateDoc(playerDocRef, {
               minutesStudied: increment(sessionMinutes),
-              xp: increment((sessionMinutes.toFixed(1) * 10)), // 10 XP per minute
-              studySessions: arrayUnion(sessionDuration),
+              xp: increment((sessionMinutes)), // 10 XP per minute
+              studySessions: arrayUnion(sessionMinutes),
             });
   
             console.log('Study session saved:', sessionMinutes);

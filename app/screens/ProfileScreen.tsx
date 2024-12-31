@@ -27,12 +27,11 @@ export default function ProfileScreen() {
             setUsername(data.username || 'ANONYMOUS');
             setTotalStudyTime(data.minutesStudied || 0);
 
-            const validStudySessions = Array.isArray(data.studySessions) ? data.studySessions.filter((session: number) => session > 0.1) : [];
-            setStudySessions(validStudySessions.length);
+            setStudySessions(data.studySessions.length);
 
-            const totalValidTime = validStudySessions.reduce((sum: number, session: number) => sum + session, 0);
-            const avgTime = validStudySessions.length > 0 ? (totalValidTime / validStudySessions.length).toFixed(2) : 0;
-            setAverageStudyTime(Number(avgTime));
+            const totalValidTime = data.studySessions.reduce((sum: number, session: number) => sum + session, 0);
+            const avgValidTime = data.studySessions.length > 0 ? totalValidTime / data.studySessions.length : 0;
+            setAverageStudyTime(avgValidTime); 
 
             setProfileImage(data.profileImage || null)
           }
@@ -42,16 +41,19 @@ export default function ProfileScreen() {
 
           let rankPos = 0;
           let totalUsers = 0;
+          let index = 0;
 
-          leaderboardSnapshot.forEach((docSnapshot, index) => {
+          leaderboardSnapshot.forEach((docSnapshot) => {
             totalUsers++;
+
             if (docSnapshot.id === user.uid) {
               rankPos = index + 1;
             }
+            index++;
           });
 
-          setRank(rankPos || "#Unranked");
-          setUsersUnderCurrentRank(Math.max(0,  totalUsers-rankPos));
+          setRank(rankPos || "Unranked");
+          setUsersUnderCurrentRank(totalUsers-rankPos);
         } catch (error) {
           console.error('Error fetching profile data: ', error)
         }
@@ -79,18 +81,21 @@ export default function ProfileScreen() {
     if (!result.canceled) {
       const user = auth.currentUser;
       if (user) {
-        setProfileImage(result.assets[0].uri);
+        const selectedImage = result.assets[0].uri;
+        setProfileImage(selectedImage);
 
         // update profile img in firestore
         const playerDocRef = doc(db, 'leaderboard', user.uid);
-        await updateDoc(playerDocRef, {
-          profileImage: result.assets[0].uri,
-        })
-      }
-
+        try {
+          await updateDoc(playerDocRef, {
+            profileImage: result.assets[0].uri,
+          });
+          alert("Profile Picture Successfully Updated!")
+        } catch (error) {
+          console.error("Error updating profile picture: ", error)
+        }
+      } 
     }
-
-
   }
 
   return (
@@ -104,18 +109,49 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         {/* Actual PROFILEEEEEEE Now */}
         <View style={styles.pfpContainer}>
-          <Image source={require('../../assets/images/crownIcon.png')} style={styles.profileImage}/>
+          <TouchableOpacity onPress={handleImagePicker}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Image 
+                source={require('../../assets/images/anonymous.png')}
+                style={styles.profileImage}
+              />
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.profileInfo}>
           <Text style={styles.profileText}>Username: {username}</Text>
           <Text style={[styles.profileText, styles.rank]}>Rank: #{rank}</Text>
-          <Text style={styles.profileText}>Total Study Time: {totalStudyTime}</Text>
+          <Text style={styles.profileText}>Total Study Time: {totalStudyTime.toFixed(2)} Minutes</Text>
           <Text style={styles.profileText}>Study Sessions: {studySessions}</Text>
           <Text style={styles.profileText}>Average Study Session: {averageStudyTime.toFixed(2)} minutes</Text>
           <Text style={[styles.profileText, styles.usersUnderCurrentRank]}>You are currently beating {usersUnderCurrentRank} users</Text>
         </View>
 
+        <TouchableOpacity onPress={() => navigation.goBack()}> {/* Goes back to home page */}
+          <Text style={styles.profileText}>Press ME To Go Back</Text>
+        </TouchableOpacity>
+
+        <View style={styles.navbarContainer}>
+          <TouchableOpacity 
+            style={styles.navbarCategories} onPress={() => navigation.navigate('Home')}>
+            <Text style={styles.navbarText}>Home</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Profile')}>
+            <Text style={[styles.navbarText, { backgroundColor: '#DF3131' }]}>Profile</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Challenges')}>
+            <Text style={styles.navbarText}>Challenges</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Leaderboard')}>
+            <Text style={styles.navbarText}>Leaderboard</Text>
+          </TouchableOpacity>
+        </View>
 
       </ImageBackground>
     </View>
@@ -123,6 +159,22 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  navbarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    bottom: -240,
+  },
+  navbarCategories: {
+    padding: 10,
+    borderRadius: 10,
+  },
+  navbarText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -146,6 +198,9 @@ const styles = StyleSheet.create({
   profileImage: {
     height: 200,
     width: 200,
+    borderRadius: 100,
+    margin: 10,
+    marginBottom: 20,
   },
   rank: {
     color: '#FF5757',
