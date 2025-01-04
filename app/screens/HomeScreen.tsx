@@ -30,7 +30,6 @@ export default function HomeScreen() {
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
   const [minutesStudied, setMinutesStudied] = useState(0);
   const [xp, setXP] = useState(0);
-  const [currentLevel, setCurrentLevel] = useState(0);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [leaderboard, setLeaderboard] = useState<Player[]>([]);
   const [playerRank, setPlayerRank] = useState<number>(1);
@@ -40,6 +39,7 @@ export default function HomeScreen() {
   const [username, setUsername] = useState<string | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [studySessions, setStudySessions] = useState(0);
+  const [remainingMinutes, setRemainingMinutes] = useState(0);
 
   const animatedValue = useRef(new Animated.Value(0)).current;
   const rankAnimation = useRef(new Animated.Value(1)).current;
@@ -56,10 +56,8 @@ export default function HomeScreen() {
         const data = playerDoc.data();
         setXP(parseFloat(Number((data?.xp) ?? 0).toFixed(1)));
         setMinutesStudied(parseFloat(data?.minutesStudied ?? 0));
-        setCurrentLevel(parseFloat(data?.currentLevel ?? 0));
-
-        const username = data?.username || 'anonymous';
-        setUsername(username);
+        setRemainingMinutes(data?.remainingMinutes || data?.minutesStudied || 0);
+        setUsername(data?.username || 'anonymous');
       }
     }
   };
@@ -149,6 +147,7 @@ export default function HomeScreen() {
             // Update Firestore with new minutesStudied, xp, and studySessions
             await updateDoc(playerDocRef, {
               minutesStudied: increment(sessionMinutes), // Add session minutes
+              remainingMinutes: increment(sessionMinutes),
               xp: increment(totalXP), // Add total XP earned during the session
               studySessions: arrayUnion(sessionMinutes.toFixed(1)), // Add session duration to sessions
             });

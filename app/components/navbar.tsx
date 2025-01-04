@@ -43,8 +43,10 @@ const styles = StyleSheet.create({
   navbarCategories: {
     padding: 10,
     borderRadius: 10,
+    marginHorizontal: 10,
   },
   navbarText: {
+    fontFamily: "AnnieUseYourTelescope-Regular",
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: 'bold',

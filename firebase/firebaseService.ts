@@ -33,6 +33,7 @@ export const addPlayer = async (): Promise<void> => {
       await setDoc(playerRef, {
         username: username || 'anonymous', // firebase auth display name!
         xp: 0, // default
+        remainingMinutes: 0,
         minutesStudied: 0,
         studySessions: 0,
         level: 0,
