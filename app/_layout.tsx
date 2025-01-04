@@ -9,6 +9,8 @@ const loadFonts = async () => {
   await Font.loadAsync({
     'Baskervville-Regular': require('../assets/fonts/Baskervville-Regular.ttf'),
     'AnnieUseYourTelescope-Regular': require('../assets/fonts/AnnieUseYourTelescope-Regular.ttf'),
+    'InriaSans-Regular': require('../assets/fonts/InriaSans-Regular.ttf'),
+    'LifeSavers-Regular': require('../assets/fonts/LifeSavers-Regular.ttf'),
   })
 }
 

@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { auth, db } from "@/firebase/firebaseconfig";
 import { doc, getDoc, collection, query, orderBy, getDocs, updateDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
+import Navbar from "../components/navbar";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -119,6 +120,9 @@ export default function ProfileScreen() {
               />
             )}
           </TouchableOpacity>
+          <TouchableOpacity>
+            <Text>X</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.profileInfo}>
@@ -130,50 +134,20 @@ export default function ProfileScreen() {
           <Text style={[styles.profileText, styles.usersUnderCurrentRank]}>You are currently beating {usersUnderCurrentRank} users</Text>
         </View>
 
-        <TouchableOpacity onPress={() => navigation.goBack()}> {/* Goes back to home page */}
-          <Text style={styles.profileText}>Press ME To Go Back</Text>
-        </TouchableOpacity>
-
-        <View style={styles.navbarContainer}>
-          <TouchableOpacity 
-            style={styles.navbarCategories} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.navbarText}>Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Profile')}>
-            <Text style={[styles.navbarText, { backgroundColor: '#DF3131' }]}>Profile</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Challenges')}>
-            <Text style={styles.navbarText}>Challenges</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Leaderboard')}>
-            <Text style={styles.navbarText}>Leaderboard</Text>
-          </TouchableOpacity>
-        </View>
+        <Image source={require('../../assets/images/profilegraphic.png')} style={styles.profileGraphic}/>
 
       </ImageBackground>
+      <Navbar activeTab="Profile"/>
+
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  navbarContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    bottom: -240,
-  },
-  navbarCategories: {
-    padding: 10,
-    borderRadius: 10,
-  },
-  navbarText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+  profileGraphic: {
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
   },
   container: {
     flex: 1,
@@ -207,7 +181,7 @@ const styles = StyleSheet.create({
   },
   usersUnderCurrentRank: {
     color: '#FF5757',
-    marginTop: 20,
+    marginTop: 40,
   },
   profileInfo: {
     justifyContent: 'center',

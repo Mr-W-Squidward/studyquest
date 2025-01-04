@@ -23,6 +23,7 @@ import {
 } from '../../firebase/firebaseService';
 import { arrayUnion, doc, getDoc, increment, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebaseconfig';
+import Navbar from '../components/navbar';
 
 export default function HomeScreen() {
   const [isStudying, setIsStudying] = useState(false);
@@ -53,11 +54,11 @@ export default function HomeScreen() {
       const playerDoc = await getDoc(doc(db, 'leaderboard', user.uid));
       if (playerDoc.exists()) {
         const data = playerDoc.data();
-        setXP(data.xp || 0);
-        setMinutesStudied(data.minutesStudied || 0);
-        setCurrentLevel(data.currentLevel || 0);
+        setXP(parseFloat(Number((data?.xp) ?? 0).toFixed(1)));
+        setMinutesStudied(parseFloat(data?.minutesStudied ?? 0));
+        setCurrentLevel(parseFloat(data?.currentLevel ?? 0));
 
-        const username = data.username || 'anonymous';
+        const username = data?.username || 'anonymous';
         setUsername(username);
       }
     }
@@ -82,16 +83,16 @@ export default function HomeScreen() {
         if (playerRankIndex < updatedLeaderboard.length - 1) {
           const competitorPlayer = updatedLeaderboard[playerRankIndex + 1]; // player BEHIND on leaderboard (+1)
           setCompetitor('-' + competitorPlayer.username + '-' || 'NO COMPETITOR');
-          const xpUntilRankUp = updatedLeaderboard[playerRankIndex-1].xp - updatedLeaderboard[playerRankIndex].xp
-          const xpDifference = (updatedLeaderboard[playerRankIndex].xp - competitorPlayer.xp).toFixed(1)
-          const minutesDifference = xpDifference / 10; // assuming 10 xp = 1 min (will change prolly)
-          setBeatingCompetitorBy(minutesDifference);
-          setXpUntilNextRank(xpUntilRankUp);
+          const xpUntilRankUp = (updatedLeaderboard[playerRankIndex-1]?.xp || 0) - (updatedLeaderboard[playerRankIndex]?.xp || 0)
+          const xpDifference = (updatedLeaderboard[playerRankIndex]?.xp || 0 - parseFloat(Number(competitorPlayer?.xp || 0).toFixed(1)))
+          const minutesDifference = parseFloat((xpDifference / 10).toFixed(1)); // assuming 10 xp = 1 min (will change prolly)
+          setBeatingCompetitorBy(minutesDifference.toFixed(1));
+          setXpUntilNextRank(parseFloat(xpUntilRankUp.toFixed(1)));
         } else {
           setCompetitor('No Competitor...');
           setBeatingCompetitorBy('-∞');
           const xpUntilRankUp = updatedLeaderboard[playerRankIndex-1].xp - updatedLeaderboard[playerRankIndex].xp;
-          setXpUntilNextRank(xpUntilRankUp)
+          setXpUntilNextRank(xpUntilRankUp.toFixed(1));
         }
       } 
     }
@@ -115,9 +116,9 @@ export default function HomeScreen() {
       const interval: any = setInterval(() => {
         setMinutesStudied((prev) => parseFloat((prev+0.1).toFixed(1)));
         setXP((prevXP) => {
-          const newXP = prevXP + 1;          
-          return newXP;
-        }); // 1 xp / min
+          const newXP = (prevXP || 0) + 1;
+          return parseFloat(newXP.toFixed(2));
+        });
       }, 6000) // 6000 ms = 0.1 sec
       setTimer(interval);
     }
@@ -127,41 +128,43 @@ export default function HomeScreen() {
     if (isStudying) {
       clearInterval(timer);
       setIsStudying(false);
-  
+
       Animated.timing(animatedValue, {
         toValue: 0,
         duration: 500,
         easing: Easing.out(Easing.exp),
         useNativeDriver: false,
       }).start();
-  
+
       const user = auth.currentUser;
       if (user) {
-        const sessionDuration = Date.now() - (startTime || Date.now()); 
-        const sessionMinutes: number = sessionDuration / 60000; // Convert to MINS from MS
-  
-        if (sessionMinutes > 0.1) { // Only save sessions longer than 0.1 minutes
+        const sessionDuration = Date.now() - (startTime || Date.now());
+        const sessionMinutes = parseFloat((sessionDuration / 60000).toFixed(1)); // Convert ms to minutes
+
+        if (sessionMinutes >= 0.1) {
           try {
+            const totalXP = parseFloat((sessionMinutes * 10).toFixed(1)); // 10 XP per minute
             const playerDocRef = doc(db, 'leaderboard', user.uid);
-  
+
             // Update Firestore with new minutesStudied, xp, and studySessions
             await updateDoc(playerDocRef, {
-              minutesStudied: increment(sessionMinutes),
-              xp: increment((sessionMinutes)), // 10 XP per minute
-              studySessions: arrayUnion(sessionMinutes),
+              minutesStudied: increment(sessionMinutes), // Add session minutes
+              xp: increment(totalXP), // Add total XP earned during the session
+              studySessions: arrayUnion(sessionMinutes.toFixed(1)), // Add session duration to sessions
             });
-  
-            console.log('Study session saved:', sessionMinutes);
+
+            console.log('Study session saved:', sessionMinutes, 'minutes,', totalXP, 'XP');
           } catch (error) {
             console.error('Error updating study session:', error);
           }
         }
       }
-  
+
       setTimer(null);
       setStartTime(null);
     }
   };
+
   
 
   const triggerRankUpAnimation = () => {
@@ -292,47 +295,15 @@ export default function HomeScreen() {
 
             <Text style={styles.beatingCompetitorBy}>You are winning by {beatingCompetitorBy} minutes.</Text>
           </View>
-          <View style={styles.navbarContainer}>
-            <TouchableOpacity 
-              style={[styles.navbarCategories, { backgroundColor: '#DF3131' },]} onPress={() => navigation.navigate('Home')}>
-              <Text style={styles.navbarText}>Home</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Profile')}>
-              <Text style={styles.navbarText}>Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Challenges')}>
-              <Text style={styles.navbarText}>Challenges</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.navbarCategories} onPress={() => navigation.navigate('Leaderboard')}>
-              <Text style={styles.navbarText}>Leaderboard</Text>
-            </TouchableOpacity>
-          </View>
+          
       </ScrollView>
     </Animated.View>
+    <Navbar activeTab="Home"/>
   </ImageBackground>
   );
 }
       
 const styles = StyleSheet.create({
-  navbarContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    bottom: -140,
-  },
-  navbarCategories: {
-    padding: 10,
-    borderRadius: 10,
-  },
-  navbarText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
   rankSection: {
     flexDirection: 'row',
     alignItems: 'center',
