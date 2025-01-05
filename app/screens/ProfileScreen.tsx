@@ -1,10 +1,14 @@
-import React, { useEffect, useState} from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground } from "react-native";
+import React, { useEffect, useRef, useState} from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground, Alert, Dimensions } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { auth, db } from "@/firebase/firebaseconfig";
 import { doc, getDoc, collection, query, orderBy, getDocs, updateDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import Navbar from "../components/navbar";
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing'
+
+const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -14,6 +18,7 @@ export default function ProfileScreen() {
   const [studySessions, setStudySessions] = useState<number>(0);
   const [usersUnderCurrentRank, setUsersUnderCurrentRank] = useState<number>(0);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const viewShotRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +71,7 @@ export default function ProfileScreen() {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (permissionResult.granted === false) {
-      alert("Permission to access photos is required.")
+      Alert.alert("Permission to access photos is required.")
       return;
     }
 
@@ -89,7 +94,7 @@ export default function ProfileScreen() {
           await updateDoc(playerDocRef, {
             profileImage: result.assets[0].uri,
           });
-          alert("Profile Picture Successfully Updated!")
+          Alert.alert("Profile Picture Successfully Updated!")
         } catch (error) {
           console.error("Error updating profile picture: ", error)
         }
@@ -97,50 +102,74 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleShare = async () => {
+    try {
+      const uri = await viewShotRef.current.capture();
+      if (uri) {
+        const isSharingAvailable = await Sharing.isAvailableAsync();  
+        if (isSharingAvailable) {
+          await Sharing.shareAsync(uri);
+        } else {
+          Alert.alert("Sharing is not available :(")
+        }
+      }
+    } catch (error) {
+      console.error("Error sharing profile screenshot: ", error);
+    }
+  }
+
   return (
-    <View style={styles.container}>
-      <ImageBackground
-                source={require('../../assets/images/homepagegradient.png')}
-                style={styles.background}
-      >
-        <TouchableOpacity>
-          <Image source={require('../../assets/images/shareIcon.png')} style={styles.shareButton}/>
+    <ViewShot ref={viewShotRef} style={{ flex: 1 }} options={{ format: "jpg", quality: 1.0 }}>
+      <View style={styles.container}>
+        <ImageBackground
+          source={require("../../assets/images/homepagegradient.png")}
+          style={styles.background}
+        >
+        <TouchableOpacity onPress={handleShare}>
+          <Image source={require("../../assets/images/shareIcon.png")} style={styles.shareButton} />
         </TouchableOpacity>
-        {/* Actual PROFILEEEEEEE Now */}
+
+        {/* PROFILE CONTENT */}
         <View style={styles.pfpContainer}>
           <TouchableOpacity onPress={handleImagePicker}>
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.profileImage} />
             ) : (
-              <Image 
-                source={require('../../assets/images/anonymous.png')}
-                style={styles.profileImage}
-              />
+              <Image source={require("../../assets/images/anonymous.png")} style={styles.profileImage} />
             )}
           </TouchableOpacity>
-          <Text style={styles.removePFP}>|</Text>
         </View>
 
         <View style={styles.profileInfo}>
           <Text style={styles.profileText}>Username: {username}</Text>
           <Text style={[styles.profileText, styles.rank]}>Rank: #{rank}</Text>
-          <Text style={styles.profileText}>Total Study Time: {totalStudyTime.toFixed(2)} Minutes</Text>
+          <Text style={styles.profileText}>
+            Total Study Time: {totalStudyTime.toFixed(2)} Minutes
+          </Text>
           <Text style={styles.profileText}>Study Sessions: {studySessions || 0}</Text>
-          <Text style={styles.profileText}>Average Study Session: {(totalStudyTime/studySessions) ? (totalStudyTime/studySessions).toFixed(2) : 0} minutes</Text>
-          <Text style={[styles.profileText, styles.usersUnderCurrentRank]}>You are currently beating {usersUnderCurrentRank} {usersUnderCurrentRank===1 ? "user" : "users"}</Text>
+          <Text style={styles.profileText}>
+            Average Study Session:{" "}
+            {studySessions > 0 ? (totalStudyTime / studySessions).toFixed(2) : 0} minutes
+          </Text>
+          <Text style={[styles.profileText, styles.usersUnderCurrentRank]}>
+            You are currently beating {usersUnderCurrentRank}{" "}
+            {usersUnderCurrentRank === 1 ? "user" : "users"}
+          </Text>
         </View>
 
-        <Image source={require('../../assets/images/profilegraphic.png')} style={styles.profileGraphic}/>
-
-      </ImageBackground>
-      <Navbar activeTab="Profile"/>
-
+        <Image source={require("../../assets/images/profilegraphic.png")} style={styles.profileGraphic} />
+        </ImageBackground>
+      <Navbar activeTab="Profile" />
     </View>
+  </ViewShot>
   )
 }
 
 const styles = StyleSheet.create({
-  removePFP: {
+  viewShot: {
+    backgroundColor: 'transparent',
+  },
+  separator: {
     color: "#FFFFFF",
     fontSize: 16,
     opacity: 0.5,

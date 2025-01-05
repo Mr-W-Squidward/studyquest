@@ -49,8 +49,8 @@ export default function Leaderboard() {
 
   const getXPDifference = (playerXP: number) => {
     const difference = playerXP - userXP;
-    if (difference > 0) return `${difference} XP Ahead`;
-    if (difference < 0) return `${difference} XP Behind`;
+    if (difference > 0) return `+${difference} XP`;
+    if (difference < 0) return `${difference} XP`;
     return 'TIED'
   };
 
@@ -88,7 +88,7 @@ export default function Leaderboard() {
       </View>
       <Navbar activeTab="Leaderboard"/>
     </ImageBackground>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
