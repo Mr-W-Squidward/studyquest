@@ -1,12 +1,15 @@
 import { doc, setDoc, updateDoc, increment, collection, query, orderBy, getDocs, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebaseconfig';
-import { getAuth } from 'firebase/auth';
-import { updateProfile } from 'firebase/auth';
+import { getAuth, updateProfile } from 'firebase/auth';
 
 export interface Player {
   id: string,
   username: string;
   xp: number;
+  remainingMinutes: number,
+  minutesStudied: number,
+  studySessions: number,
+  isStudying: boolean,
 }
 
 // adding a player
@@ -15,7 +18,7 @@ export const addPlayer = async (): Promise<void> => {
   const user = auth.currentUser;
 
   if (!user) {
-    console.error("No logged in user!")
+    console.error("No logged in user!");
     return;
   }
 
@@ -24,28 +27,24 @@ export const addPlayer = async (): Promise<void> => {
     const playerDoc = await getDoc(playerRef);
 
     if (!playerDoc.exists()) {
-      let username = user.displayName;
-      if (!username) {
-        username = prompt('Please enter a username: ', 'Player') || 'anonymous';
-        await updateProfile(user, { displayName: username })
-      };
-
       await setDoc(playerRef, {
-        username: username || 'anonymous', // firebase auth display name!
+        username: user.displayName || null, // Leave as null for now
         xp: 0, // default
         remainingMinutes: 0,
         minutesStudied: 0,
         studySessions: 0,
         level: 0,
+        isStudying: false,
       });
       console.log('Player added to leaderboard');
     } else {
-      console.log('Player already exists, not adding to leaderboard')
+      console.log('Player already exists, not adding to leaderboard');
     }
   } catch (error) {
-    console.error('Error adding player: ', error)
+    console.error('Error adding player: ', error);
   }
 };
+
 
 // updating XP dynamically
 export const updatePlayerXP = async (xpToAdd: number, minutesToAdd: number, newStudySessions: number): Promise<void> => {

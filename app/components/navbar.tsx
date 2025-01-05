@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     paddingVertical: 10,
+    marginBottom: 30,
   },
   navbarCategories: {
     padding: 10,

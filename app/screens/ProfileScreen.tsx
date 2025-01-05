@@ -12,7 +12,6 @@ export default function ProfileScreen() {
   const [rank, setRank] = useState<number | string>("Unranked");
   const [totalStudyTime, setTotalStudyTime] = useState<number>(0);
   const [studySessions, setStudySessions] = useState<number>(0);
-  const [averageStudyTime, setAverageStudyTime] = useState<number>(0);
   const [usersUnderCurrentRank, setUsersUnderCurrentRank] = useState<number>(0);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
@@ -30,9 +29,8 @@ export default function ProfileScreen() {
 
             setStudySessions(data.studySessions.length);
 
-            const totalValidTime = data.studySessions.reduce((sum: number, session: number) => sum + session, 0);
+            const totalValidTime = data.studySessions.length > 0 ? data.studySessions.reduce((sum: number, session: number) => sum + session, 0) : 0;
             const avgValidTime = data.studySessions.length > 0 ? totalValidTime / data.studySessions.length : 0;
-            setAverageStudyTime(avgValidTime); 
 
             setProfileImage(data.profileImage || null)
           }
@@ -120,18 +118,16 @@ export default function ProfileScreen() {
               />
             )}
           </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>X</Text>
-          </TouchableOpacity>
+          <Text style={styles.removePFP}>|</Text>
         </View>
 
         <View style={styles.profileInfo}>
           <Text style={styles.profileText}>Username: {username}</Text>
           <Text style={[styles.profileText, styles.rank]}>Rank: #{rank}</Text>
           <Text style={styles.profileText}>Total Study Time: {totalStudyTime.toFixed(2)} Minutes</Text>
-          <Text style={styles.profileText}>Study Sessions: {studySessions}</Text>
-          <Text style={styles.profileText}>Average Study Session: {averageStudyTime.toFixed(2)} minutes</Text>
-          <Text style={[styles.profileText, styles.usersUnderCurrentRank]}>You are currently beating {usersUnderCurrentRank} users</Text>
+          <Text style={styles.profileText}>Study Sessions: {studySessions || 0}</Text>
+          <Text style={styles.profileText}>Average Study Session: {(totalStudyTime/studySessions) ? (totalStudyTime/studySessions).toFixed(2) : 0} minutes</Text>
+          <Text style={[styles.profileText, styles.usersUnderCurrentRank]}>You are currently beating {usersUnderCurrentRank} {usersUnderCurrentRank===1 ? "user" : "users"}</Text>
         </View>
 
         <Image source={require('../../assets/images/profilegraphic.png')} style={styles.profileGraphic}/>
@@ -144,6 +140,12 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  removePFP: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    opacity: 0.5,
+    marginBottom: 20,
+  },
   profileGraphic: {
     width: 200,
     height: 200,
@@ -164,6 +166,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   shareButton: {
+    top: 40,
     height: 50,
     width: 50,
     borderRadius: 50,

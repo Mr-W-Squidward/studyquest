@@ -11,8 +11,11 @@ import {
   TouchableOpacity, 
   Alert, 
   Animated, 
+  Modal,
   Easing, 
-  ScrollView } 
+  ScrollView, 
+  TextInput,
+} 
 from 'react-native';
 import {  
   addPlayer,
@@ -36,13 +39,15 @@ export default function HomeScreen() {
   const [competitor, setCompetitor] = useState<string | null>(null);
   const [beatingCompetitorBy, setBeatingCompetitorBy] = useState<number | null | string>(null);
   const [xpUntilNextRank, setXpUntilNextRank] = useState<number | null | string>(null);
-  const [username, setUsername] = useState<string | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [studySessions, setStudySessions] = useState(0);
   const [remainingMinutes, setRemainingMinutes] = useState(0);
 
+  const [newUsername, setNewUsername] = useState('');
+  const [username, setUsername] = useState<string | null>(null);
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+
   const animatedValue = useRef(new Animated.Value(0)).current;
-  const rankAnimation = useRef(new Animated.Value(1)).current;
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -57,7 +62,13 @@ export default function HomeScreen() {
         setXP(parseFloat(Number((data?.xp) ?? 0).toFixed(1)));
         setMinutesStudied(parseFloat(data?.minutesStudied ?? 0));
         setRemainingMinutes(data?.remainingMinutes || data?.minutesStudied || 0);
-        setUsername(data?.username || 'anonymous');
+        
+
+        if (!data?.username) {
+          setShowUsernameModal(true);
+        } else {
+          setUsername(data?.username);
+        }
       }
     }
   };
@@ -73,9 +84,6 @@ export default function HomeScreen() {
 
       if (playerRankIndex !== -1) {
         const newRank = playerRankIndex+1;
-        if (newRank !== playerRank) {
-          triggerRankUpAnimation();
-        }
         setPlayerRank(newRank);
 
         if (playerRankIndex < updatedLeaderboard.length - 1) {
@@ -98,7 +106,32 @@ export default function HomeScreen() {
   return () => unsubscribe(); // clean up
 }, []);
 
-  const startStudying = () => {
+  const saveUsername = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert("No user currently logged in.");
+      return;
+    }
+
+    if (!newUsername.trim() || newUsername.length < 5) {
+      Alert.alert("Error", "Username must be at least 5 characters long.");
+      return;
+    }
+
+    try {
+      const playerDocRef = doc(db, 'leaderboard', user.uid);
+      await updateDoc(playerDocRef, { username: newUsername.trim() });
+      setUsername(newUsername.trim());
+      setNewUsername('');
+      setShowUsernameModal(false);
+      Alert.alert('Success', 'Username updated successfully!');
+    } catch (error) {
+      console.error('Error updating username: ', error);
+      Alert.alert('Error', 'Failed to update username. Please try again.');
+    }
+  }
+
+  const startStudying = async () => {
     if (!isStudying) {
       Animated.timing(animatedValue, {
         toValue: 1,
@@ -119,6 +152,17 @@ export default function HomeScreen() {
         });
       }, 6000) // 6000 ms = 0.1 sec
       setTimer(interval);
+
+      const user = auth.currentUser;
+      if (user) {
+        const playerDocRef = doc(db, 'leaderboard', user.uid);
+        try {
+          await updateDoc(playerDocRef, { isStudying: true });
+          console.log("Set ISSTUDYING TO TRUE");
+        } catch (error) {
+          console.error("Error updating firestore for startstudying: ", error)
+        }
+      } 
     }
   };
 
@@ -150,6 +194,7 @@ export default function HomeScreen() {
               remainingMinutes: increment(sessionMinutes),
               xp: increment(totalXP), // Add total XP earned during the session
               studySessions: arrayUnion(sessionMinutes.toFixed(1)), // Add session duration to sessions
+              isStudying: false,
             });
 
             console.log('Study session saved:', sessionMinutes, 'minutes,', totalXP, 'XP');
@@ -157,28 +202,18 @@ export default function HomeScreen() {
             console.error('Error updating study session:', error);
           }
         }
+
+        try {
+          await updateDoc(doc(db, 'leaderboard', user.uid), { isStudying: false });
+          console.log("Firestore updated: isStudying set to false")
+        } catch (error) {
+          console.error("Error updating firestore for stopstudying: ", error)
+        }
       }
 
       setTimer(null);
       setStartTime(null);
     }
-  };
-
-  
-
-  const triggerRankUpAnimation = () => {
-    Animated.sequence([
-      Animated.timing(rankAnimation, {
-        toValue: 1.5,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(rankAnimation, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-    ]).start()
   };
 
   const handleLogout = async () => {
@@ -207,7 +242,7 @@ export default function HomeScreen() {
           styles.animatedContainer, 
         {
           transform: [
-            { translateY: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
+            { translateY: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0, 10] }) },
           ],
           opacity: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }),
         },
@@ -218,7 +253,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.headerContainer}>
-            <Text style={styles.credit}>Account: {username}</Text>
+            <Text style={styles.credit}>Account: {username || 'Setting up...'}</Text>
 
             <TouchableOpacity
               style={styles.menuButton}
@@ -283,9 +318,7 @@ export default function HomeScreen() {
             <View style={styles.rankSection}>
               <Animated.Image 
                 source={require('../../assets/images/crownIcon.png')} 
-                style={[styles.rankImage, 
-                  {transform: [{scale: rankAnimation }] }, // scale animation
-                ]}
+                style={styles.rankImage}
               />
               <Text style={styles.rank}>RANK #{playerRank}</Text>
             </View>
@@ -295,6 +328,27 @@ export default function HomeScreen() {
             <Text style={styles.beatingCompetitorBy}>You are winning by {beatingCompetitorBy} minutes.</Text>
           </View>
           
+          {/* USERNAME MODAL */}
+          <Modal
+            visible={showUsernameModal}
+            transparent={true}
+            animationType='slide'
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Set Your Username</Text>
+                <TextInput 
+                  style={styles.input}
+                  placeholder='Enter Your Username'
+                  value={newUsername}
+                  onChangeText={setNewUsername}
+                />
+                <TouchableOpacity style={styles.saveButton} onPress={saveUsername}>
+                  <Text style={styles.saveButtonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
       </ScrollView>
     </Animated.View>
     <Navbar activeTab="Home"/>
@@ -303,6 +357,40 @@ export default function HomeScreen() {
 }
       
 const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    marginBottom: 10,
+  },
+  input: {
+    width: '100%',
+    borderBottomWidth: 1,
+    borderColor: "#CCC",
+    marginBottom: 20,
+    padding: 10,
+  },
+  saveButton: {
+    backgroundColor: "#5b0128",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+  },
   rankSection: {
     flexDirection: 'row',
     alignItems: 'center',
