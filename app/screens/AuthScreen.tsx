@@ -120,7 +120,6 @@ export default function AuthScreen() {
                     placeholder="PASSWORD"
                     value={password}
                     onChangeText={setPassword}
-                    keyboardType='visible-password'
                   />
                   <TouchableOpacity style={styles.authButton} onPress={handleAuthAction}>
                     <Text style={styles.buttonText}>{isRegisterMode ? 'REGISTER' : 'LOGIN'}</Text>

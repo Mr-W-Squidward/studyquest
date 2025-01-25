@@ -10,6 +10,7 @@ const Navbar = ({ activeTab }) => {
     { name: 'Profile', route: 'Profile' },
     { name: 'Challenges', route: 'Challenges' },
     { name: 'Leaderboard', route: 'Leaderboard' },
+    { name: 'Settings', route: 'Settings' },
   ];
 
   return (
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
   navbarCategories: {
     padding: 10,
     borderRadius: 10,
-    marginHorizontal: 10,
+    marginHorizontal: 8,
   },
   navbarText: {
     fontFamily: "AnnieUseYourTelescope-Regular",
