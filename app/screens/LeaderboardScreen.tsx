@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ImageBackground } from "react-native";
+import { View, Text, StyleSheet, ImageBackground, ScrollView } from "react-native";
 import { auth, db } from "@/firebase/firebaseconfig";
 import Navbar from "../components/navbar";
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { ScrollView } from "react-native-gesture-handler";
+
+interface Player {
+  id: string;
+  username: string;
+  xp: number;
+  isStudying: boolean;
+}
 
 export default function Leaderboard() {
-  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboard, setLeaderboard] = useState<Player[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
   const [isStudyingCount, setIsStudyingCount] = useState(0);
   const [userXP, setUserXP] = useState(0);

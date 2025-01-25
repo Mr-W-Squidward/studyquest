@@ -5,6 +5,7 @@ import AuthScreen from '../screens/AuthScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
 import Leaderboard from '../screens/LeaderboardScreen';
+import Settings from '../screens/SettingsScreen';
 
 const Stack = createStackNavigator();
 
@@ -16,6 +17,7 @@ export default function AppStack() {
       <Stack.Screen name="Profile" component={ProfileScreen}/>
       <Stack.Screen name="Challenges" component={ChallengesScreen}/>
       <Stack.Screen name="Leaderboard" component={Leaderboard}/>
+      <Stack.Screen name="Settings" component={Settings}/>
     </Stack.Navigator>
   );
 }

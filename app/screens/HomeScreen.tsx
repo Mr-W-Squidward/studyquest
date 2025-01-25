@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState, useRef, useEffect } from 'react';
-import { auth } from '../../firebase/firebaseconfig';
+import { auth, db } from '../../firebase/firebaseconfig';
 import { signOut } from 'firebase/auth';
 import { 
   ImageBackground, 
@@ -19,13 +19,10 @@ import {
 from 'react-native';
 import {  
   addPlayer,
-  updatePlayerXP,
-  fetchLeaderboard,
   subscribeToLeaderboard,
   Player,
 } from '../../firebase/firebaseService';
 import { arrayUnion, doc, getDoc, increment, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase/firebaseconfig';
 import Navbar from '../components/navbar';
 
 export default function HomeScreen() {
@@ -51,60 +48,78 @@ export default function HomeScreen() {
   const navigation = useNavigation();
 
   useEffect(() => {
-  const initializePlayer = async () => {
-    await addPlayer();
-    
-    const user = auth.currentUser;
-    if (user) {
-      const playerDoc = await getDoc(doc(db, 'leaderboard', user.uid));
-      if (playerDoc.exists()) {
-        const data = playerDoc.data();
-        setXP(parseFloat(Number((data?.xp) ?? 0).toFixed(1)));
-        setMinutesStudied(parseFloat(data?.minutesStudied ?? 0));
-        setRemainingMinutes(data?.remainingMinutes || data?.minutesStudied || 0);
-        
-
-        if (!data?.username) {
-          setShowUsernameModal(true);
-        } else {
-          setUsername(data?.username);
+    const initializePlayer = async () => {
+      await addPlayer();
+  
+      const user = auth.currentUser;
+      if (user) {
+        const playerDoc = await getDoc(doc(db, 'leaderboard', user.uid));
+        if (playerDoc.exists()) {
+          const data = playerDoc.data();
+          setXP(parseFloat(Number((data?.xp) ?? 0).toFixed(1)));
+          setMinutesStudied(parseFloat(data?.minutesStudied ?? 0));
+          setRemainingMinutes(data?.remainingMinutes || data?.minutesStudied || 0);
+  
+          if (!data?.username) {
+            setShowUsernameModal(true);
+          } else {
+            setUsername(data?.username);
+          }
         }
       }
-    }
-  };
+    };
   
-  initializePlayer();
-
-  const unsubscribe = subscribeToLeaderboard((updatedLeaderboard) => {
-    setLeaderboard(updatedLeaderboard);
-
-    const user = auth.currentUser;
-    if (user) {
-      const playerRankIndex = updatedLeaderboard.findIndex((player) => player.id === user.uid);
-
-      if (playerRankIndex !== -1) {
-        const newRank = playerRankIndex+1;
-        setPlayerRank(newRank);
-
-        if (playerRankIndex < updatedLeaderboard.length - 1) {
-          const competitorPlayer = updatedLeaderboard[playerRankIndex + 1]; // player BEHIND on leaderboard (+1)
-          setCompetitor('-' + competitorPlayer.username + '-' || 'NO COMPETITOR');
-          const xpUntilRankUp = (updatedLeaderboard[playerRankIndex-1]?.xp || 0) - (updatedLeaderboard[playerRankIndex]?.xp || 0)
-          const xpDifference = (updatedLeaderboard[playerRankIndex]?.xp || 0 - parseFloat(Number(competitorPlayer?.xp || 0).toFixed(1)))
-          const minutesDifference = parseFloat((xpDifference / 10).toFixed(1)); // assuming 10 xp = 1 min (will change prolly)
-          setBeatingCompetitorBy(minutesDifference.toFixed(1));
-          setXpUntilNextRank(parseFloat(xpUntilRankUp.toFixed(1)));
-        } else {
-          setCompetitor('No Competitor...');
-          setBeatingCompetitorBy('-∞');
-          const xpUntilRankUp = updatedLeaderboard[playerRankIndex-1].xp - updatedLeaderboard[playerRankIndex].xp;
-          setXpUntilNextRank(xpUntilRankUp.toFixed(1));
+    initializePlayer();
+  
+    const unsubscribe = subscribeToLeaderboard((updatedLeaderboard) => {
+      setLeaderboard(updatedLeaderboard);
+  
+      const user = auth.currentUser;
+      if (user) {
+        const playerRankIndex = updatedLeaderboard.findIndex(
+          (player) => player.id === user.uid
+        );
+  
+        if (playerRankIndex !== -1) {
+          const newRank = playerRankIndex + 1;
+          setPlayerRank(newRank);
+  
+          if (playerRankIndex < updatedLeaderboard.length - 1) {
+            const competitorPlayer = updatedLeaderboard[playerRankIndex + 1];
+            const xpDifference =
+              (updatedLeaderboard[playerRankIndex]?.xp || 0) -
+              parseFloat(Number(competitorPlayer?.xp || 0).toFixed(1));
+            const minutesDifference = parseFloat((xpDifference / 10).toFixed(2)); // assuming 10 xp = 1 min
+  
+            setCompetitor(
+              competitorPlayer?.username
+                ? '-' + competitorPlayer.username + '-'
+                : 'NO COMPETITOR'
+            );
+            setBeatingCompetitorBy(minutesDifference.toFixed(1));
+            setXpUntilNextRank(
+              parseFloat(
+                (
+                  (updatedLeaderboard[playerRankIndex - 1]?.xp || 0) -
+                  (updatedLeaderboard[playerRankIndex]?.xp || 0)
+                ).toFixed(1)
+              )
+            );
+          } else {
+            setCompetitor('No Competitor...');
+            setBeatingCompetitorBy('-∞');
+            const xpUntilRankUp =
+              (updatedLeaderboard[playerRankIndex - 1]?.xp || 0) -
+              (updatedLeaderboard[playerRankIndex]?.xp || 0);
+            setXpUntilNextRank(xpUntilRankUp.toFixed(1));
+          }
         }
-      } 
-    }
-  });
-  return () => unsubscribe(); // clean up
-}, []);
+      }
+    });
+  
+    return () => unsubscribe(); // Clean up
+  }, []);
+  
 
   const saveUsername = async () => {
     const user = auth.currentUser;
@@ -139,82 +154,121 @@ export default function HomeScreen() {
         easing: Easing.out(Easing.exp),
         useNativeDriver: false,
       }).start();
-
-
+  
       setIsStudying(true);
       setStartTime(Date.now());
-
+  
       const interval: any = setInterval(() => {
-        setMinutesStudied((prev) => parseFloat((prev+0.1).toFixed(1)));
+        // Increment XP and minutes studied
+        setMinutesStudied((prev) => parseFloat((prev + 0.1).toFixed(1)));
         setXP((prevXP) => {
           const newXP = (prevXP || 0) + 1;
           return parseFloat(newXP.toFixed(2));
         });
-      }, 6000) // 6000 ms = 0.1 sec
+  
+        // Update leaderboard
+        const user = auth.currentUser;
+        if (user) {
+          const playerRankIndex = leaderboard.findIndex(
+            (player) => player.id === user.uid
+          );
+  
+          if (playerRankIndex !== -1) {
+            setXpUntilNextRank((prevXpUntilNextRank) => {
+              const updatedXpUntilNextRank = Number(prevXpUntilNextRank ?? 0) - 1;
+  
+              if (updatedXpUntilNextRank <= 0 && playerRankIndex > 0) {
+                // Rank up
+                const newRank = playerRankIndex;
+                setPlayerRank(newRank);
+  
+                // Recalculate XP for next rank
+                const newXpUntilNextRank =
+                  (leaderboard[playerRankIndex - 1]?.xp || 0) -
+                  (leaderboard[playerRankIndex]?.xp || 0);
+                return parseFloat(newXpUntilNextRank.toFixed(1));
+              }
+  
+              return parseFloat(updatedXpUntilNextRank.toFixed(1));
+            });
+  
+            // Updating competitor details
+            if (playerRankIndex < leaderboard.length - 1) {
+              const competitorPlayer = leaderboard[playerRankIndex + 1];
+              const xpDifference =
+                (leaderboard[playerRankIndex]?.xp || 0) -
+                parseFloat(Number(competitorPlayer?.xp || 0).toFixed(1));
+              const minutesDifference = parseFloat(
+                (xpDifference / 10).toFixed(2) // 10 XP = 1 min
+              );
+  
+              setCompetitor(
+                competitorPlayer?.username
+                  ? '-' + competitorPlayer.username + '-'
+                  : 'NO COMPETITOR'
+              );
+              setBeatingCompetitorBy(minutesDifference.toFixed(1));
+            } else {
+              setCompetitor('No Competitor...');
+              setBeatingCompetitorBy('-∞');
+            }
+          }
+        }
+      }, 6000); // 6000 ms = 0.1 min
+  
       setTimer(interval);
-
+  
+      // Firestore update
       const user = auth.currentUser;
       if (user) {
         const playerDocRef = doc(db, 'leaderboard', user.uid);
         try {
           await updateDoc(playerDocRef, { isStudying: true });
-          console.log("Set ISSTUDYING TO TRUE");
+          console.log('Set ISSTUDYING TO TRUE');
         } catch (error) {
-          console.error("Error updating firestore for startstudying: ", error)
+          console.error('Error updating Firestore for startStudying: ', error);
         }
-      } 
+      }
     }
-  };
+  };  
 
   const stopStudying = async () => {
     if (isStudying) {
       clearInterval(timer);
+      setTimer(null);
+  
+      const sessionDuration = Date.now() - (startTime || Date.now());
+      const sessionMinutes = parseFloat((sessionDuration / 60000).toFixed(1)); // Convert ms to minutes
+      const totalXP = parseFloat((sessionMinutes * 10).toFixed(1)); // 10 XP per minute
+  
+      setMinutesStudied((prev) => parseFloat((prev + sessionMinutes).toFixed(1)));
+      setXP((prevXP) => parseFloat((prevXP + totalXP).toFixed(1)));
+      setXpUntilNextRank((prev) => {
+        const updatedXP = (Number(prev) ?? 0) - totalXP;
+        return updatedXP > 0 ? parseFloat(updatedXP.toFixed(1)) : 'Level Up!';
+      });
+  
       setIsStudying(false);
-
-      Animated.timing(animatedValue, {
-        toValue: 0,
-        duration: 500,
-        easing: Easing.out(Easing.exp),
-        useNativeDriver: false,
-      }).start();
-
+  
+      // Firestore update
       const user = auth.currentUser;
       if (user) {
-        const sessionDuration = Date.now() - (startTime || Date.now());
-        const sessionMinutes = parseFloat((sessionDuration / 60000).toFixed(1)); // Convert ms to minutes
-
-        if (sessionMinutes >= 0.1) {
-          try {
-            const totalXP = parseFloat((sessionMinutes * 10).toFixed(1)); // 10 XP per minute
-            const playerDocRef = doc(db, 'leaderboard', user.uid);
-
-            // Update Firestore with new minutesStudied, xp, and studySessions
-            await updateDoc(playerDocRef, {
-              minutesStudied: increment(sessionMinutes), // Add session minutes
-              remainingMinutes: increment(sessionMinutes),
-              xp: increment(totalXP), // Add total XP earned during the session
-              studySessions: arrayUnion(sessionMinutes.toFixed(1)), // Add session duration to sessions
-              isStudying: false,
-            });
-
-            console.log('Study session saved:', sessionMinutes, 'minutes,', totalXP, 'XP');
-          } catch (error) {
-            console.error('Error updating study session:', error);
-          }
-        }
-
+        const playerDocRef = doc(db, 'leaderboard', user.uid);
         try {
-          await updateDoc(doc(db, 'leaderboard', user.uid), { isStudying: false });
-          console.log("Firestore updated: isStudying set to false")
+          await updateDoc(playerDocRef, {
+            minutesStudied: increment(sessionMinutes),
+            remainingMinutes: increment(sessionMinutes),
+            xp: increment(totalXP),
+            studySessions: arrayUnion(sessionMinutes.toFixed(1)),
+            isStudying: false,
+          });
+          console.log('Study session saved:', sessionMinutes, 'minutes,', totalXP, 'XP');
         } catch (error) {
-          console.error("Error updating firestore for stopstudying: ", error)
+          console.error('Error updating study session:', error);
         }
       }
-
-      setTimer(null);
-      setStartTime(null);
     }
-  };
+  };  
 
   const handleLogout = async () => {
     try {
@@ -227,8 +281,7 @@ export default function HomeScreen() {
   }
 
   const handleSettings =  () => {
-    Alert.alert('Settings', 'NOT IMPLEMENTED YET')
-    // implement settings page after stufffffz
+    navigation.navigate('Settings');
   }
 
   return (

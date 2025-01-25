@@ -64,7 +64,7 @@ export default function AuthScreen() {
       }
       setShowForm(false);
     } catch (error: any) {
-      console.error('Firebase Auth Error:', error); // Debugging
+      console.error('Login Error:', error); // Debugging
       Alert.alert('Error', error.message || 'Something went wrong.');
     }
   };

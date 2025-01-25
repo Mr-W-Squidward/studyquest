@@ -171,7 +171,13 @@ export default function ChallengesScreen() {
               <View
                 style={[
                   styles.progress,
-                  { width: `${(remainingMinutes / 120) * 100}%` },
+                  {
+                    width: `${
+                      remainingMinutes >= 120
+                        ? 100
+                        : (remainingMinutes / 120) * 100
+                    }%`,
+                  },
                 ]}
               />
             </View>
@@ -203,7 +209,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   quoteContainer: {
-    height: 120,
+    height: 80,
     width: '100%',
     overflow: 'hidden',
     justifyContent: 'center',
@@ -269,6 +275,8 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: "#FFFFFF",
     borderRadius: 4,
+    overflow: "hidden",
+    flexDirection: "row",
   },
   progress: {
     height: "100%",
@@ -281,6 +289,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     marginTop: 20,
+    paddingHorizontal: 10,
   },
   quoteAuthor: {
     color: "#FFFFFF",

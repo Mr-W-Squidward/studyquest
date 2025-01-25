@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState} from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground, Alert, Dimensions } from "react-native";
-import { useNavigation } from '@react-navigation/native';
 import { auth, db } from "@/firebase/firebaseconfig";
 import { doc, getDoc, collection, query, orderBy, getDocs, updateDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
@@ -11,7 +10,6 @@ import * as Sharing from 'expo-sharing'
 const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
-  const navigation = useNavigation();
   const [username, setUsername] = useState<string>('Anonymous');
   const [rank, setRank] = useState<number | string>("Unranked");
   const [totalStudyTime, setTotalStudyTime] = useState<number>(0);
@@ -35,7 +33,6 @@ export default function ProfileScreen() {
             setStudySessions(data.studySessions.length);
 
             const totalValidTime = data.studySessions.length > 0 ? data.studySessions.reduce((sum: number, session: number) => sum + session, 0) : 0;
-            const avgValidTime = data.studySessions.length > 0 ? totalValidTime / data.studySessions.length : 0;
 
             setProfileImage(data.profileImage || null)
           }

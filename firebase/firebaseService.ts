@@ -1,6 +1,6 @@
 import { doc, setDoc, updateDoc, increment, collection, query, orderBy, getDocs, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebaseconfig';
-import { getAuth, updateProfile } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 
 export interface Player {
   id: string,
@@ -28,7 +28,7 @@ export const addPlayer = async (): Promise<void> => {
 
     if (!playerDoc.exists()) {
       await setDoc(playerRef, {
-        username: user.displayName || null, // Leave as null for now
+        username: user.displayName,
         xp: 0, // default
         remainingMinutes: 0,
         minutesStudied: 0,

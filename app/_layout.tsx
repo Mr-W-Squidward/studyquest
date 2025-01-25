@@ -2,8 +2,6 @@ import { Stack } from "expo-router";
 import * as Font from 'expo-font';
 import React, { useState, useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
-// import AppStack from "./navigation/AppStack";
-// import AuthScreen from './navigation/AuthScreen'
 
 const loadFonts = async () => {
   await Font.loadAsync({
@@ -30,7 +28,4 @@ export default function RootLayout({ children }: any) {
   }
 
   return <Stack screenOptions={{headerShown: false}}/>;
-  // return (
-  //   // isAuthenticated ? <AppStack /> : <AuthScreen />
-  // );
 }
