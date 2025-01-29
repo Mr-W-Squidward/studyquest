@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../../firebase/firebaseconfig';
 import { signOut } from 'firebase/auth';
+import { Audio } from 'expo-av';
 import { 
   ImageBackground, 
   StyleSheet, 
@@ -146,8 +147,18 @@ export default function HomeScreen() {
     }
   }
 
+  interface SoundFile {
+    uri: string;
+  }
+
+  const playSound = async (soundFile: SoundFile): Promise<void> => {
+    const { sound } = await Audio.Sound.createAsync(soundFile);
+    await sound.playAsync();
+  };
+
   const startStudying = async () => {
     if (!isStudying) {
+      await playSound(require('../../assets/sounds/start.wav'))
       Animated.timing(animatedValue, {
         toValue: 1,
         duration: 500,
@@ -234,6 +245,7 @@ export default function HomeScreen() {
 
   const stopStudying = async () => {
     if (isStudying) {
+      await playSound(require('../../assets/sounds/start.wav'))
       clearInterval(timer);
       setTimer(null);
   

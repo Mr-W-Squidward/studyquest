@@ -133,171 +133,119 @@ export default function Settings() {
   };
 
   const handleFeedback = () => {
-    Alert.alert("Feedback", "We appreciate your feedback! Email us at feedback@example.com");
+    Alert.alert("Feedback", "We appreciate your feedback! Email us at mrwsquidward@gmail.com");
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <Text style={styles.header}>Settings</Text>
-  
-        {/* Username Update */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Username</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="New Username"
-            placeholderTextColor="#555"
-            value={newUsername}
-            onChangeText={setNewUsername}
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleUsernameUpdate}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Updating..." : "Update Username"}
-            </Text>
-          </TouchableOpacity>
+
+        <View style={styles.row}>
+          {/* LEFT SIDE */}
+          <View style={styles.halfSection}>
+            <Text style={styles.sectionHeader}>Username</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="New Username"
+              placeholderTextColor="#CCC"
+              value={newUsername}
+              onChangeText={setNewUsername}
+            />
+            <TouchableOpacity style={styles.button} onPress={handleUsernameUpdate} disabled={loading}>
+              <Text style={styles.buttonText}>{loading ? "Updating..." : "Update Username"}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* RIGHT SIDE */}
+          <View style={styles.halfSection}>
+            <Text style={styles.sectionHeader}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="New Email"
+              placeholderTextColor="#CCC"
+              value={newEmail}
+              onChangeText={setNewEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Current Password"
+              placeholderTextColor="#CCC"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.button} onPress={handleEmailUpdate} disabled={loading}>
+              <Text style={styles.buttonText}>{loading ? "Updating..." : "Update Email"}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-  
-        {/* Email Update */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="New Email"
-            placeholderTextColor="#555"
-            value={newEmail}
-            onChangeText={setNewEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Current Password"
-            placeholderTextColor="#555"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleEmailUpdate}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Updating..." : "Update Email"}
-            </Text>
-          </TouchableOpacity>
+
+        <View style={styles.row}>
+          {/* LEFT SIDE */}
+          <View style={styles.halfSection}>
+            <Text style={styles.sectionHeader}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="New Password"
+              placeholderTextColor="#CCC"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Current Password"
+              placeholderTextColor="#CCC"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.button} onPress={handlePasswordUpdate} disabled={loading}>
+              <Text style={styles.buttonText}>{loading ? "Updating..." : "Update Password"}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* RIGHT SIDE */}
+          <View style={styles.halfSection}>
+            <Text style={styles.sectionHeader}>Study Reminder</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="HH:MM"
+              placeholderTextColor="#CCC"
+              value={reminderTime}
+              onChangeText={setReminderTime}
+            />
+            <TouchableOpacity style={styles.button} onPress={setReminder}>
+              <Text style={styles.buttonText}>Set Reminder</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-  
-        {/* Password Update */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="New Password"
-            placeholderTextColor="#555"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Current Password"
-            placeholderTextColor="#555"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handlePasswordUpdate}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Updating..." : "Update Password"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-  
-        {/* Reminder Time */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Study Reminder</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="HH:MM"
-            placeholderTextColor="#555"
-            value={reminderTime}
-            onChangeText={setReminderTime}
-          />
-          <TouchableOpacity style={styles.button} onPress={setReminder}>
-            <Text style={styles.buttonText}>Set Reminder</Text>
-          </TouchableOpacity>
-        </View>
-  
-        {/* Feedback */}
-        <View style={styles.section}>
+
+        <View style={styles.fullSection}>
           <TouchableOpacity style={styles.button} onPress={handleFeedback}>
             <Text style={styles.buttonText}>Send Feedback</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-      <Navbar activeTab="Settings" style={styles.navbar} />
+
+      <View style={styles.navbarContainer}>
+        <Navbar activeTab="Settings" />
+      </View>
     </View>
   );
-}  
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0E0E0E",
-  },
-  scrollContent: {
-    paddingBottom: 80, // Add space for the navbar
-  },
-  header: {
-    fontSize: 28,
-    fontFamily: "AnnieUseYourTelescope-Regular",
-    color: "#FFFFFF",
-    textAlign: "center",
-    marginTop: 60,
-    marginVertical: 20,
-  },
-  section: {
-    marginVertical: 15,
-    marginHorizontal: 15,
-    padding: 20,
-    borderRadius: 10,
-    backgroundColor: "#1A1A1A",
-  },
-  sectionHeader: {
-    fontSize: 18,
-    color: "#FFFFFF",
-    marginBottom: 10,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 5,
-    padding: 10,
-    fontSize: 16,
-    marginBottom: 10,
-    color: "#000000",
-  },
-  button: {
-    backgroundColor: "#DF3131",
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-  navbar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  container: { flex: 1, backgroundColor: "#0E0E0E" },
+  scrollContent: { paddingBottom: 150, paddingHorizontal: 20 },
+  header: { fontSize: 28, color: "#FFF", textAlign: "center", marginVertical: 20 },
+  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
+  halfSection: { width: "48%", backgroundColor: "#5e1214", padding: 40, borderRadius: 10 },
+  fullSection: { width: "100%", backgroundColor: "#5e1214", padding: 40, borderRadius: 10 },
+  sectionHeader: { fontSize: 18, color: "#FFF", marginBottom: 15 },
+  input: { backgroundColor: "#FFF", borderRadius: 5, padding: 12, fontSize: 16, marginBottom: 15 },
+  button: { backgroundColor: "#DF3131", borderRadius: 10, paddingVertical: 14, alignItems: "center" },
+  buttonText: { color: "#FFF", fontSize: 16 },
+  navbarContainer: { alignItems: "center", paddingBottom: 20 },
 });
