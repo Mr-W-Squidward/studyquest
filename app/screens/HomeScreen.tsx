@@ -13,7 +13,6 @@ import {
   Alert, 
   Animated, 
   Modal,
-  Easing, 
   ScrollView, 
   TextInput,
 } 
@@ -23,7 +22,7 @@ import {
   subscribeToLeaderboard,
   Player,
 } from '../../firebase/firebaseService';
-import { arrayUnion, doc, getDoc, increment, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import Navbar from '../components/navbar';
 
 export default function HomeScreen() {
@@ -34,7 +33,6 @@ export default function HomeScreen() {
   const [competitor, setCompetitor] = useState<string | null>(null);
   const [beatingCompetitorBy, setBeatingCompetitorBy] = useState<number | null | string>(null);
   const [xpUntilNextRank, setXpUntilNextRank] = useState<number | null | string>(null);
-  const [studySessions, setStudySessions] = useState(0);
   const [remainingMinutes, setRemainingMinutes] = useState(0);
 
   const [newUsername, setNewUsername] = useState('');

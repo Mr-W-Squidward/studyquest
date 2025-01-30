@@ -4,7 +4,7 @@ import Navbar from "../components/navbar";
 import { updateDoc, increment, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase/firebaseconfig";
 
-const challengesData = [
+const challengesData = [ // Lets players complete challenges to earn XP
   { id: 1, minutes: 20, xp: 10, completed: false },
   { id: 2, minutes: 30, xp: 40, completed: false },
   { id: 3, minutes: 60, xp: 100, completed: false },

@@ -1,13 +1,74 @@
-Study Quest is a gamified productivity app designed to make studying more engaging and rewarding. Track your study sessions, earn XP, level up, and compete on leaderboards while setting personalized reminders and managing your progress. Tailored for students and lifelong learners, Study Quest turns productivity into an adventure!
+# 📚 StudyQuest
+A **gamified productivity app** designed to make studying more engaging and rewarding! Study Quest helps you **track study sessions, earn XP, level up, and compete on leaderboards**—all while making studying an **interactive and immersive experience**.  
 
-Why Study Quest? --
-If you’re looking for more than just a timer or a checklist, Study Quest makes studying exciting and rewarding.
-It bridges the gap between productivity and entertainment, turning mundane tasks into a fun and engaging quest.
-The app is perfect for anyone who struggles with motivation, thrives on competition, or just wants to make studying less boring and more adventurous.
+## 🎯 Why StudyQuest
+Unlike basic timers or study planners, StudyQuest transforms your study routine into an **exciting**, **competitive** game where **progress feels rewarding** if you:
+✅ Struggle with motivation
+✅ Thrive on competition
+✅ Want to make studying **less boring & more adventurous** .^.
 
-What makes Study Quest unique? --
-Gamified Motivation: Study Quest transforms studying into an interactive game where you earn XP, complete challenges, and climb leaderboards. Unlike other productivity apps, it adds a layer of fun and competition to keep you motivated.
-Community-Driven Leaderboards: Compete with friends or peers while staying anonymous if preferred, giving you a sense of accountability and progress without sacrificing privacy.
-Custom Study Reminders: Set personalized reminders to help you stay consistent with your study schedule, unlike generic alarms from other apps. (workin on it...)
-Adaptive Design: The app is built specifically for students and learners, making it a tailored experience and it looks super cool!
-Personal Growth Focus: Study Quest not only tracks your study time but also gives you feedback on your progress through XP/leveling and a shop system, helping you build lasting habits and feel a sense of accomplishment.
+Then **StudyQuest** is for you!
+
+---
+
+## ✨ Key Features
+
+### 🎮 **Gamified Motivation**  
+- Earn **XP** as you study, **level up**, and **compete on leaderboards**
+- **Challenges & rewards** system to keep you motivated
+
+### 🏆 **Community Leaderboards**  
+- Compete with **friends or peers** but *stay anonymous* if preferred
+- Climb the ***global rankings*** and track your progress against the *best of the best!*
+
+### ⏰ **Custom Study Timers (Coming Soon)**
+- Set **personalized** study reminders to *stay on track*
+- StudyQuest will remind you based on your habits or what you set!
+
+### Sleek & Adaptive U.I (Coming Soon)
+- Themed options like dark mode rather than the red themed default will be available!
+- Intuitive, aesthetic and *SUPER* cool.
+
+## Personal Growth Tracking
+- View your study habits, average study time length, number of sessions, see how you stack up!
+- Get **feedback** on how you're improving (coming soon!)
+- Earn **in-game rewards** to keep progressing (coming soon!)
+
+## 🛠 Tech Stack
+
+### ***Frontend*** (React Native)
+- **Expo/Expo-AV** (fast development)
+- **React Navigation** (screen transitions)
+
+### ***Backend*** (Firebase)
+- **Firebase Authentication** (login/sign-up)
+- **Cloud Firestore** to store user progress/leaderboards
+
+### ***State Management***
+- **React Context API** for state handling
+
+## 🚀 How StudyQuest Works
+1️⃣ **Start a study session** → Earn XP every few minutes.
+2️⃣ **Gain XP & level up** → Keep studying and reach higher ranks!
+3️⃣ **Compete on the leaderboard** → See where you stand among others.
+4️⃣ **Track your sessions** → View study stats, trends & achievements. 
+5️⃣ **Stay motivated** → Keep unlocking new levels & features!
+
+## 🔮 Upcoming Features  
+🚀 **Study Streaks** – Earn rewards for consistent study sessions  
+🎁 **Shop System / In-game Rewards** – Spend XP to unlock themes, icons & customizations  
+⏳ **Pomodoro Mode** – Timed study intervals with built-in breaks  
+📊 **Advanced Stats** – Deep dive into your study habits & trends  
+😎 **Friends** - Make connections, compare and compete! Rise with your friends or fight against them!
+🏙️ **Local Leaderboards** - Want a smaller circle? A tighter battle? Compete against those nearby or locally rather than globally. Or don't!
+🕵️ **Anonymous Profiles** - Want to see but not be seen! Stay anonymous... be your own operative.
+📚 **Themed Options** - Allows you to customize your OWN version of StudyQuest to no end!
+👨‍🏫 **Personalized Feedback** -- Get your own personalized suggestions on how you can improve based on your study habits!
+
+## 🌍 Join The StudyQuest Community!
+🚀 Turn studying into an **adventure** and make learning **exciting** again!   
+🎮 Compete, improve, and level up your knowledge every day.  
+
+**Start your quest today!** 🎓🔥
+### Community Links:
+- *will add later!*
