@@ -30,7 +30,7 @@ export const StudySessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
           const data = playerDoc.data();
           setIsStudying(data.isStudying || false);
           setMinutesStudied(data.minutesStudied || 0);
-          setXP(data.xp || 0);
+          setXP(parseFloat((data.xp || 0).toFixed(1)));
           setStartTime(data.isStudying ? Date.now() - (data.studyDuration || 0) : null);
         }
       }

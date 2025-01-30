@@ -5,6 +5,7 @@ import { StudySessionProvider } from './context/StudySessionContext';
 
 export default function App() {
   return (
+    // Auth context provider wraps the StudySessionProvider which wraps the AppStack
     <AuthProvider>
       <StudySessionProvider>
         <AppStack />

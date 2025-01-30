@@ -49,6 +49,7 @@ export default function ChallengesScreen() {
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // fetching leaderboard data
   useEffect(() => {
     const fetchPlayerData = async () => {
       const user = auth.currentUser;
@@ -105,6 +106,7 @@ export default function ChallengesScreen() {
     setXpGained(0);
   };
 
+  // Completing a challenge
   const handleCompleteChallenge = async (challenge: { id: number; minutes: number; xp: number; completed: boolean }) => {
     console.log("Clicked Challenge: ", challenge);
     console.log("Remaining Minutes: ", remainingMinutes);

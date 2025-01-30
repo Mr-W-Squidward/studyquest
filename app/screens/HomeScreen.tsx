@@ -2,7 +2,6 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../../firebase/firebaseconfig';
 import { signOut } from 'firebase/auth';
-import { Audio } from 'expo-av';
 import { useStudySession } from '../context/StudySessionContext';
 import { 
   ImageBackground, 
@@ -165,7 +164,7 @@ export default function HomeScreen() {
           source={require('../../assets/images/homepagegradient.png')}
           style={styles.background}
     >
-      <Animated.View
+      <Animated.View // Animation currently isn't working - next patch :*( rough being a lone developer...
         style=
         {[
           styles.animatedContainer, 
@@ -211,7 +210,7 @@ export default function HomeScreen() {
 
           <View style={styles.infoContainer}>
 
-            {/* DYNAMIC INFO */}
+            {/* DYNAMIC INFO; from firebase */}
             <View style={styles.infoRow}>
               <Image source={require('../../assets/images/timericon.png')} style={styles.infoImages}/>
               <Text style={styles.infoText}>{minutesStudied.toFixed(1)} Minutes Studied</Text>
@@ -226,6 +225,7 @@ export default function HomeScreen() {
               <Image source={require('../../assets/images/presenticon.png')} style={styles.infoImages}/>
               <Text style={styles.infoText}>NEXT RANK: {xpUntilNextRank} XP Required</Text>
             </View>
+
             {/* START/STOP STUDYING */}
             <View style={styles.studyingContainer}>
               <ImageBackground
@@ -244,6 +244,7 @@ export default function HomeScreen() {
               </ImageBackground>
             </View>
             
+            {/* RANK INFO */}
             <View style={styles.rankSection}>
               <Animated.Image 
                 source={require('../../assets/images/crownIcon.png')} 

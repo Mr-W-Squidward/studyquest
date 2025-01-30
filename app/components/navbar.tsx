@@ -2,11 +2,12 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-{/* Different styling for active/selected tab */}
+// Different styling for active/selected tab
 const Navbar = ({ activeTab }) => {
   const navigation = useNavigation();
 
   const tabs = [
+    // May add more tabs here (e.g. 'Shop', 'Inventory'); can make this item based (DROPS BASED ON STUDY TIME W/ RARITY!!)
     { name: 'Home', route: 'Home' },
     { name: 'Profile', route: 'Profile' },
     { name: 'Challenges', route: 'Challenges' },
