@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../../firebase/firebaseconfig';
 import { signOut } from 'firebase/auth';
 import { Audio } from 'expo-av';
+import { useStudySession } from '../context/StudySessionContext';
 import { 
   ImageBackground, 
   StyleSheet, 
@@ -27,17 +28,13 @@ import { arrayUnion, doc, getDoc, increment, updateDoc } from 'firebase/firestor
 import Navbar from '../components/navbar';
 
 export default function HomeScreen() {
-  const [isStudying, setIsStudying] = useState(false);
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const [minutesStudied, setMinutesStudied] = useState(0);
-  const [xp, setXP] = useState(0);
+  const { isStudying, minutesStudied, xp, startStudying, stopStudying } = useStudySession();
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [leaderboard, setLeaderboard] = useState<Player[]>([]);
   const [playerRank, setPlayerRank] = useState<number>(1);
   const [competitor, setCompetitor] = useState<string | null>(null);
   const [beatingCompetitorBy, setBeatingCompetitorBy] = useState<number | null | string>(null);
   const [xpUntilNextRank, setXpUntilNextRank] = useState<number | null | string>(null);
-  const [startTime, setStartTime] = useState<number | null>(null);
   const [studySessions, setStudySessions] = useState(0);
   const [remainingMinutes, setRemainingMinutes] = useState(0);
 
@@ -58,8 +55,6 @@ export default function HomeScreen() {
         const playerDoc = await getDoc(doc(db, 'leaderboard', user.uid));
         if (playerDoc.exists()) {
           const data = playerDoc.data();
-          setXP(parseFloat(Number((data?.xp) ?? 0).toFixed(1)));
-          setMinutesStudied(parseFloat(data?.minutesStudied ?? 0));
           setRemainingMinutes(data?.remainingMinutes || data?.minutesStudied || 0);
   
           if (!data?.username) {
@@ -111,10 +106,10 @@ export default function HomeScreen() {
           } else {
             setCompetitor('No Competitor...');
             setBeatingCompetitorBy('-∞');
-            const xpUntilRankUp =
-              (updatedLeaderboard[playerRankIndex - 1]?.xp || 0) -
-              (updatedLeaderboard[playerRankIndex]?.xp || 0);
-            setXpUntilNextRank(xpUntilRankUp.toFixed(1));
+            const xpUntilRankUp = playerRankIndex < updatedLeaderboard.length - 1 ? '∞' :
+              ((updatedLeaderboard[playerRankIndex - 1]?.xp || 0) -
+              (updatedLeaderboard[playerRankIndex]?.xp || 0));
+            setXpUntilNextRank(typeof xpUntilRankUp === 'number' ? xpUntilRankUp.toFixed(1) : xpUntilRankUp);
           }
         }
       }
@@ -149,144 +144,6 @@ export default function HomeScreen() {
       Alert.alert('Error', 'Failed to update username. Please try again.');
     }
   }
-
-  // Start/stop studying sound effect 
-  interface SoundFile {
-    uri: string;
-  }
-
-  const playSound = async (soundFile: SoundFile): Promise<void> => {
-    const { sound } = await Audio.Sound.createAsync(soundFile);
-    await sound.playAsync();
-  };
-
-  // On start studying function ---- TO:DO - Add session persistence because it unmounts when I switch to another tab; (studyContextSession)
-  const startStudying = async () => {
-    if (!isStudying) {
-      await playSound(require('../../assets/sounds/start.wav'))
-      Animated.timing(animatedValue, {
-        toValue: 1,
-        duration: 500,
-        easing: Easing.out(Easing.exp),
-        useNativeDriver: false,
-      }).start();
-  
-      setIsStudying(true);
-      setStartTime(Date.now());
-  
-      const interval: any = setInterval(() => {
-        // Increment XP and minutes studied
-        setMinutesStudied((prev) => parseFloat((prev + 0.1).toFixed(1)));
-        setXP((prevXP) => {
-          const newXP = (prevXP || 0) + 1;
-          return parseFloat(newXP.toFixed(2));
-        });
-  
-        // Update leaderboard
-        const user = auth.currentUser;
-        if (user) {
-          const playerRankIndex = leaderboard.findIndex(
-            (player) => player.id === user.uid
-          );
-  
-          if (playerRankIndex !== -1) {
-            setXpUntilNextRank((prevXpUntilNextRank) => {
-              const updatedXpUntilNextRank = Number(prevXpUntilNextRank ?? 0) - 1;
-  
-              if (updatedXpUntilNextRank <= 0 && playerRankIndex > 0) {
-                // Rank up
-                const newRank = playerRankIndex;
-                setPlayerRank(newRank);
-  
-                // Recalculate XP for next rank
-                const newXpUntilNextRank =
-                  (leaderboard[playerRankIndex - 1]?.xp || 0) -
-                  (leaderboard[playerRankIndex]?.xp || 0);
-                return parseFloat(newXpUntilNextRank.toFixed(1));
-              }
-  
-              return parseFloat(updatedXpUntilNextRank.toFixed(1));
-            });
-  
-            // Updating competitor details
-            if (playerRankIndex < leaderboard.length - 1) {
-              const competitorPlayer = leaderboard[playerRankIndex + 1];
-              const xpDifference =
-                (leaderboard[playerRankIndex]?.xp || 0) -
-                parseFloat(Number(competitorPlayer?.xp || 0).toFixed(1));
-              const minutesDifference = parseFloat(
-                (xpDifference / 10).toFixed(2) // 10 XP = 1 min
-              );
-  
-              setCompetitor(
-                competitorPlayer?.username
-                  ? '-' + competitorPlayer.username + '-'
-                  : 'NO COMPETITOR'
-              );
-              setBeatingCompetitorBy(minutesDifference.toFixed(1));
-            } else {
-              setCompetitor('No Competitor...');
-              setBeatingCompetitorBy('-∞');
-            }
-          }
-        }
-      }, 6000); // 6000 ms = 0.1 min
-  
-      setTimer(interval);
-  
-      // Firestore update
-      const user = auth.currentUser;
-      if (user) {
-        const playerDocRef = doc(db, 'leaderboard', user.uid);
-        try {
-          await updateDoc(playerDocRef, { isStudying: true });
-          console.log('Set ISSTUDYING TO TRUE');
-        } catch (error) {
-          console.error('Error updating Firestore for startStudying: ', error);
-        }
-      }
-    }
-  };  
-
-  // On stop studying function
-  const stopStudying = async () => {
-    if (isStudying) {
-      await playSound(require('../../assets/sounds/start.wav'))
-      clearInterval(timer);
-      setTimer(null);
-  
-      const sessionDuration = Date.now() - (startTime || Date.now());
-      const sessionMinutes = parseFloat((sessionDuration / 60000).toFixed(1)); // Convert ms to minutes
-      const totalXP = parseFloat((sessionMinutes * 10).toFixed(1)); // 10 XP per minute
-  
-      setMinutesStudied((prev) => parseFloat((prev + sessionMinutes).toFixed(1)));
-      setXP((prevXP) => parseFloat((prevXP + totalXP).toFixed(1)));
-      setXpUntilNextRank((prev) => {
-        const updatedXP = (Number(prev) ?? 0) - totalXP;
-        return updatedXP > 0 ? parseFloat(updatedXP.toFixed(1)) : 'Level Up!';
-      });
-  
-      setIsStudying(false);
-  
-      // Firestore update
-      const user = auth.currentUser;
-      if (user) {
-        const playerDocRef = doc(db, 'leaderboard', user.uid);
-        try {
-          await updateDoc(playerDocRef, {
-            minutesStudied: increment(sessionMinutes),
-            remainingMinutes: increment(sessionMinutes),
-            xp: increment(totalXP),
-            studySessions: arrayUnion(sessionMinutes.toFixed(1)),
-            isStudying: false,
-          });
-          console.log('Study session saved:', sessionMinutes, 'minutes,', totalXP, 'XP');
-        } catch (error) {
-          console.error('Error updating study session:', error);
-        }
-      }
-    }
-  };  
 
   // Logout deauthentication
   const handleLogout = async () => {

@@ -57,8 +57,8 @@ export default function Leaderboard() {
   // XP needed between 2 players (used on Leaderboard)
   const getXPDifference = (playerXP: number) => {
     const difference = playerXP - userXP;
-    if (difference > 0) return `+${difference} XP`;
-    if (difference < 0) return `${difference} XP`;
+    if (difference > 0) return `+${difference.toFixed(1)} XP`;
+    if (difference < 0) return `${difference.toFixed(1)} XP`;
     return 'TIED'
   };
 
