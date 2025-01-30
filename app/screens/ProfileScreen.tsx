@@ -1,13 +1,32 @@
 import React, { useEffect, useRef, useState} from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground, Alert, Dimensions } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground, Alert, Dimensions, Modal } from "react-native";
 import { auth, db } from "@/firebase/firebaseconfig";
 import { doc, getDoc, collection, query, orderBy, getDocs, updateDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import Navbar from "../components/navbar";
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing'
+import { FlatList } from "react-native-gesture-handler";
 
-const { width } = Dimensions.get("window");
+interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  requirement: number | string;
+}
+
+const achievementList = [
+  { id: 1, name: "Beginner Scholar", description: "Study for 10 minutes", icon: "📖", requirement: 10},
+  { id: 2, name: "Leader", description: "Study for 100 minutes", icon: "📚", requirement: 100},
+  { id: 3, name: "Study Warrior", description: "Study for 500 minutes", icon: "🔥", requirement: 500},
+  { id: 4, name: "Study Champion", description: "Study for 1000 minutes", icon: "🏅", requirement: 1000},
+  { id: 5, name: "Unstoppable", description: "Study for 5000 minutes", icon: "🏆", requirement: 5000},
+  { id: 6, name: "Night Owl", description: "Study between 12AM - 4AM", icon: "🌙", requirement: "night"},
+  { id: 7, name: "Marathon Runner", description: "Study for 3+ hours in one consecutive session", icon: "⏳", requirement: "long-session"},
+  { id: 8, name: "Daily Grinder", description: "Study for 7 consecutive days", icon: "📅", requirement: "streak"},
+  { id: 8, name: "Among The Greatest", description: "Hit top 10 in the leaderboard", icon: "🎖", requirement: "top10"}
+]
 
 export default function ProfileScreen() {
   const [username, setUsername] = useState<string>('Anonymous');
@@ -16,9 +35,14 @@ export default function ProfileScreen() {
   const [studySessions, setStudySessions] = useState<number>(0);
   const [usersUnderCurrentRank, setUsersUnderCurrentRank] = useState<number>(0);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [selectedAchievement, setSelectedAchievement] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
   const viewShotRef = useRef(null);
 
   useEffect(() => {
+    // Fetch Firebase Leaderboard Data
     const fetchData = async () => {
       const user = auth.currentUser;
 
@@ -29,12 +53,29 @@ export default function ProfileScreen() {
             const data = playerDoc.data();
             setUsername(data.username || 'ANONYMOUS');
             setTotalStudyTime(data.minutesStudied || 0);
-
             setStudySessions(data.studySessions.length);
-
-            const totalValidTime = data.studySessions.length > 0 ? data.studySessions.reduce((sum: number, session: number) => sum + session, 0) : 0;
-
             setProfileImage(data.profileImage || null)
+
+            let earnedAchievements = achievementList.filter(achievement => {
+              if (typeof achievement.requirement === "number") {
+                return data.minutesStudied >= achievement.requirement;
+              }
+              if (achievement.requirement === "night") {
+                return data.nightSessions > 0;
+              }
+              if (achievement.requirement === "long-session") {
+                return data.longestSession >= 180;
+              }
+              if (achievement.requirement === "streak") {
+                return data.studyStreak >= 7;
+              }
+              if (achievement.requirement === "top10") {
+                return data.rank <= 10;
+              }
+              return false;
+            });
+
+            setAchievements(earnedAchievements);
           }
 
           const leaderboardQuery = query(collection(db, 'leaderboard'), orderBy('xp', 'desc'));
@@ -64,6 +105,7 @@ export default function ProfileScreen() {
     fetchData();
   }, []);
 
+  // Image picker for PFP selection 
   const handleImagePicker = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -99,6 +141,7 @@ export default function ProfileScreen() {
     }
   }
 
+  // Only works on mobile (viewShotRef doesn't apply to PC screens) sharing stat image
   const handleShare = async () => {
     try {
       const uri = await viewShotRef.current.capture();
@@ -153,6 +196,38 @@ export default function ProfileScreen() {
             {usersUnderCurrentRank === 1 ? "user" : "users"}
           </Text>
         </View>
+
+        {/* ACHIEVEMENTS */}
+        <Text style={styles.achievementsTitle}>Achievements</Text>
+        <View style={styles.achievementContainer}>
+          <FlatList 
+            data={achievements}
+            numColumns={3}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={{
+              justifyContent: 'center', 
+              alignItems: 'center',
+            }}
+            renderItem={({item}) => (
+              <TouchableOpacity onPress={() => { setSelectedAchievement(item); setModalVisible(true); }}>
+                <Text style={styles.achievementIcon}>{item.icon}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+
+        {/* ACHIEVEMENT MODAL */}
+        {selectedAchievement && (
+          <Modal transparent visible={modalVisible} animationType="slide">
+            <View style={styles.modalView}>
+              <Text style={styles.modalTitle}>{selectedAchievement.name}</Text>
+              <Text>{selectedAchievement.description}</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalClose}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </Modal>
+        )}
 
         <Image source={require("../../assets/images/profilegraphic.png")} style={styles.profileGraphic} />
         </ImageBackground>
@@ -223,5 +298,60 @@ const styles = StyleSheet.create({
     textShadowColor: '#000000',
     textShadowOffset: { width: 4, height: 4 },
     textShadowRadius: 3,
+  },
+  achievementsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: "#682860",
+    textAlign: 'center',
+    alignSelf: 'center',
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  achievementContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center', 
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  
+  achievementIcon: {
+    fontSize: 40,
+    margin: 10,
+    padding: 15,
+    backgroundColor: '#2D2D2D',
+    borderRadius: 10,
+    textAlign: 'center',
+    width: 60,
+    height: 60,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+  },
+  modalView: {
+    backgroundColor: "#222",
+    borderRadius: 20, 
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '80%',
+    alignSelf: 'center',
+    marginTop: '50%',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    marginBottom: 10,
+  },
+  modalClose: {
+    fontSize: 18,
+    color: "#FF5757",
+    fontWeight: 'bold',
+    marginTop: 15,
   },
 })

@@ -18,6 +18,7 @@ export default function Leaderboard() {
   const [userXP, setUserXP] = useState(0);
 
   useEffect(() => {
+    // Fetch leaderboard data
     const fetchLeaderboardData = async () => {
       try {
         const leaderboardQuery = query(collection(db, 'leaderboard'), orderBy('xp', 'desc'))
@@ -53,6 +54,7 @@ export default function Leaderboard() {
     fetchLeaderboardData();
   }, []);
 
+  // XP needed between 2 players (used on Leaderboard)
   const getXPDifference = (playerXP: number) => {
     const difference = playerXP - userXP;
     if (difference > 0) return `+${difference} XP`;

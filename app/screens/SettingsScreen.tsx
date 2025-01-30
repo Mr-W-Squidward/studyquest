@@ -46,6 +46,7 @@ export default function Settings() {
     fetchUserData();
   }, []);
 
+  // On Username Update 
   const handleUsernameUpdate = async () => {
     if (!newUsername.trim()) {
       Alert.alert("Error", "Please enter a username");
@@ -69,6 +70,7 @@ export default function Settings() {
     }
   };
 
+  // On Email Update
   const handleEmailUpdate = async () => {
     if (!newEmail.trim() || !password.trim()) {
       Alert.alert("Error", "Please fill out all fields");
@@ -94,6 +96,7 @@ export default function Settings() {
     }
   };
 
+  // On Password Update
   const handlePasswordUpdate = async () => {
     if (!password.trim() || !newPassword.trim()) {
       Alert.alert("Error", "Please fill out all fields");
@@ -118,6 +121,7 @@ export default function Settings() {
     }
   };
 
+  // Set Reminder For Studying: Needs to be implemented
   const setReminder = async () => {
     try {
       const user = auth.currentUser;
@@ -222,6 +226,7 @@ export default function Settings() {
           </View>
         </View>
 
+      {/* Feedback */}
         <View style={styles.fullSection}>
           <TouchableOpacity style={styles.button} onPress={handleFeedback}>
             <Text style={styles.buttonText}>Send Feedback</Text>
@@ -229,6 +234,7 @@ export default function Settings() {
         </View>
       </ScrollView>
 
+      {/* Navbar */}
       <View style={styles.navbarContainer}>
         <Navbar activeTab="Settings" />
       </View>
@@ -246,6 +252,6 @@ const styles = StyleSheet.create({
   sectionHeader: { fontSize: 18, color: "#FFF", marginBottom: 15 },
   input: { backgroundColor: "#FFF", borderRadius: 5, padding: 12, fontSize: 16, marginBottom: 15 },
   button: { backgroundColor: "#DF3131", borderRadius: 10, paddingVertical: 14, alignItems: "center" },
-  buttonText: { color: "#FFF", fontSize: 16 },
+  buttonText: { color: "#FFF", fontSize: 16, textAlign: 'center' },
   navbarContainer: { alignItems: "center", paddingBottom: 20 },
 });

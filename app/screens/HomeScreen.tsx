@@ -48,6 +48,7 @@ export default function HomeScreen() {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
 
+  // Initialize Player Function
   useEffect(() => {
     const initializePlayer = async () => {
       await addPlayer();
@@ -72,6 +73,7 @@ export default function HomeScreen() {
   
     initializePlayer();
   
+    // Leaderboard subscription / Rank setting
     const unsubscribe = subscribeToLeaderboard((updatedLeaderboard) => {
       setLeaderboard(updatedLeaderboard);
   
@@ -121,7 +123,7 @@ export default function HomeScreen() {
     return () => unsubscribe(); // Clean up
   }, []);
   
-
+  // Username Setup 
   const saveUsername = async () => {
     const user = auth.currentUser;
     if (!user) {
@@ -134,6 +136,7 @@ export default function HomeScreen() {
       return;
     }
 
+    // Add username to firestore
     try {
       const playerDocRef = doc(db, 'leaderboard', user.uid);
       await updateDoc(playerDocRef, { username: newUsername.trim() });
@@ -147,6 +150,7 @@ export default function HomeScreen() {
     }
   }
 
+  // Start/stop studying sound effect 
   interface SoundFile {
     uri: string;
   }
@@ -156,6 +160,7 @@ export default function HomeScreen() {
     await sound.playAsync();
   };
 
+  // On start studying function ---- TO:DO - Add session persistence because it unmounts when I switch to another tab; (studyContextSession)
   const startStudying = async () => {
     if (!isStudying) {
       await playSound(require('../../assets/sounds/start.wav'))
@@ -243,6 +248,7 @@ export default function HomeScreen() {
     }
   };  
 
+  // On stop studying function
   const stopStudying = async () => {
     if (isStudying) {
       await playSound(require('../../assets/sounds/start.wav'))
@@ -282,6 +288,7 @@ export default function HomeScreen() {
     }
   };  
 
+  // Logout deauthentication
   const handleLogout = async () => {
     try {
       await signOut(auth);

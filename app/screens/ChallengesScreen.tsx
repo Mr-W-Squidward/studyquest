@@ -69,6 +69,7 @@ export default function ChallengesScreen() {
     startQuoteCycle();
   }, []);
 
+  // Cycling quotes
   const startQuoteCycle = () => {
     fadeIn();
     const interval = setInterval(() => {
@@ -80,6 +81,7 @@ export default function ChallengesScreen() {
     return () => clearInterval(interval);
   };
 
+  // Animations 
   const fadeIn = () => {
     Animated.timing(fadeAnim, {
       toValue: 1,

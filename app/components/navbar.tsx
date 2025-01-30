@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
+{/* Different styling for active/selected tab */}
 const Navbar = ({ activeTab }) => {
   const navigation = useNavigation();
 
